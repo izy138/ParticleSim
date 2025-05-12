@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebGPU Debug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        canvas {
+            border: 1px solid #333;
+            background-color: #000;
+            display: block;
+            margin: 20px auto;
+        }
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .test-result.pass {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        .test-result.fail {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        .console-output {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>WebGPU Particle Simulator Debug</h1>
+        
+        <div class="test-result" id="test-result">
+            <strong>Ready to run tests...</strong>
+        </div>
+        
+        <canvas id="webgpu-canvas" width="400" height="300"></canvas>
+        
+        <div>
+            <button onclick="runWebGPUTest()">Test WebGPU Basic Support</button>
+            <button onclick="runMinimalShaderTest()">Test Minimal Shaders</button>
+            <button onclick="runFullSimulator()">Test Full Simulator</button>
+            <button onclick="clearConsole()">Clear Console</button>
+        </div>
+        
+        <h3>Console Output:</h3>
+        <div class="console-output" id="console-output"></div>
+    </div>
+
+    <script>
+        // Capture console output
+        let consoleOutput = [];
+        
+        function updateConsoleOutput() {
+            const consoleDiv = document.getElementById('console-output');
+            consoleDiv.innerHTML = consoleOutput.join('<br>');
+            consoleDiv.scrollTop = consoleDiv.scrollHeight;
+        }
+        
+        function clearConsole() {
+            consoleOutput = [];
+            updateConsoleOutput();
+        }
+        
+        // Override console methods to capture output
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        console.log = function(...args) {
+            consoleOutput.push(`[LOG] ${args.join(' ')}`);
+            updateConsoleOutput();
+            originalLog.apply(console, args);
+        };
+        
+        console.error = function(...args) {
+            consoleOutput.push(`[ERROR] ${args.join(' ')}`);
+            updateConsoleOutput();
+            originalError.apply(console, args);
+        };
+        
+        console.warn = function(...args) {
+            consoleOutput.push(`[WARN] ${args.join(' ')}`);
+            updateConsoleOutput();
+            originalWarn.apply(console, args);
+        };
+        
+        function setTestResult(message, passed) {
+            const resultDiv = document.getElementById('test-result');
+            resultDiv.className = `test-result ${passed ? 'pass' : 'fail'}`;
+            resultDiv.innerHTML = `<strong>${passed ? '✓' : '✗'} ${message}</strong>`;
+        }
+        
+        async function runWebGPUTest() {
+            console.log("Testing WebGPU basic support...");
+            
+            try {
+                if (!navigator.gpu) {
+                    setTestResult("WebGPU not supported in this browser", false);
+                    return;
+                }
+                
+                const adapter = await navigator.gpu.requestAdapter();
+                if (!adapter) {
+                    setTestResult("Could not get WebGPU adapter", false);
+                    return;
+                }
+                
+                console.log("Adapter info:", adapter);
+                console.log("Adapter features:", Array.from(adapter.features));
+                console.log("Adapter limits:", adapter.limits);
+                
+                const device = await adapter.requestDevice();
+                console.log("Device created successfully");
+                
+                setTestResult("WebGPU basic support works!", true);
+            } catch (error) {
+                console.error("WebGPU test failed:", error);
+                setTestResult(`WebGPU test failed: ${error.message}`, false);
+            }
+        }
+        
+        async function runMinimalShaderTest() {
+            console.log("Running minimal WebGPU shader test...");
+            clearConsole();
+            
+            try {
+                // Direct test of minimal shaders
+                if (!navigator.gpu) {
+                    setTestResult("WebGPU not supported", false);
+                    return;
+                }
+                
+                const adapter = await navigator.gpu.requestAdapter();
+                const device = await adapter.requestDevice();
+                
+                // Test simple compute shader
+                const testComputeShader = `
+                    @compute @workgroup_size(64)
+                    fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
+                        // This is a no-op compute shader for testing
+                    }
+                `;
+                
+                const computeModule = device.createShaderModule({
+                    label: 'test-compute-module',
+                    code: testComputeShader
+                });
+                console.log("✓ Compute shader module created");
+                
+                // Check for compilation errors
+                const computeInfo = await computeModule.getCompilationInfo();
+                if (computeInfo.messages.length > 0) {
+                    console.log("Compute shader messages:", computeInfo.messages);
+                }
+                
+                // Create compute pipeline
+                const computePipeline = device.createComputePipeline({
+                    label: 'test-compute-pipeline',
+                    layout: 'auto',
+                    compute: {
+                        module: computeModule,
+                        entryPoint: 'main'
+                    }
+                });
+                console.log("✓ Compute pipeline created");
+                
+                setTestResult("Minimal shader test passed!", true);
+            } catch (error) {
+                console.error("Minimal shader test failed:", error);
+                setTestResult(`Minimal shader test failed: ${error.message}`, false);
+            }
+        }
+        
+        async function runFullSimulator() {
+            console.log("Testing full particle simulator...");
+            clearConsole();
+            
+            try {
+                // This would run the full simulator
+                console.log("Note: Full simulator test requires all files to be properly set up");
+                
+                if (typeof ParticleLifeSimulator === 'undefined') {
+                    setTestResult("ParticleLifeSimulator not loaded. Make sure all scripts are included.", false);
+                    return;
+                }
+                
+                const simulator = new ParticleLifeSimulator('webgpu-canvas', {});
+                const initialized = await simulator.initialize();
+                
+                if (initialized) {
+                    setTestResult("Full simulator initialized successfully!", true);
+                    simulator.start();
+                } else {
+                    setTestResult("Full simulator initialization failed", false);
+                }
+            } catch (error) {
+                console.error("Full simulator test error:", error);
+                setTestResult(`Full simulator test failed: ${error.message}`, false);
+            }
+        }
+    </script>
+    
+    <!-- Include WebGPU Utils for testing -->
+    <script src="webgpu-utils.js"></script>
+    <!-- Optionally include the full simulator for testing -->
+    <script src="particle-life-simulator.js"></script>
+</body>
+</html>
