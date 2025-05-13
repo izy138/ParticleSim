@@ -258,10 +258,10 @@ class ParticleLifeSimulator {
             for (let j = 0; j < numTypes; j++) {
                 const force = species[i].forces?.[j];
 
-                strengthMatrix.push(force ? force.strength / 100.0 : 0);
-                radiusMatrix.push(force ? force.radius / 400.0 : 0.05); //:30.0
-                collisionStrengthMatrix.push(force ? force.collisionStrength / 100.0 : 0);
-                collisionRadiusMatrix.push(force ? force.collisionRadius /400.0 : 0.02); //:5.0
+                strengthMatrix.push(force ? force.strength / 67.0 : 0.05); //0
+                radiusMatrix.push(force ? force.radius / 50.0 : 0.05); //:30.0 //0.05
+                collisionStrengthMatrix.push(force ? force.collisionStrength / 75.0 : 0.05); //0
+                collisionRadiusMatrix.push(force ? force.collisionRadius /100.0 : 0.05); //:5.0 //0.02
             }
         }
 
