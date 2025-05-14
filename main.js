@@ -50,8 +50,8 @@ function configureCanvas() {
     const canvas = document.getElementById('webgpu-canvas');
     if (canvas) {
         // Set default size
-        canvas.width = 800;
-        canvas.height = 600;
+        canvas.width = 1420;
+        canvas.height = 750;
         
         // Optionally, load configuration to get proper size
         fetch('particle-life-system.json')
@@ -92,6 +92,10 @@ function setupSliders() {
     const frictionSlider = document.getElementById('friction-slider');
     const centralSlider = document.getElementById('central-slider');
     const scaleSlider = document.getElementById('force-scale-slider');
+    
+    // NEW: Particle appearance sliders
+    const sizeSlider = document.getElementById('particle-size-slider');
+    const opacitySlider = document.getElementById('particle-opacity-slider');
 
     frictionSlider.addEventListener('input', () => {
         document.getElementById('friction-value').textContent = frictionSlider.value;
@@ -107,8 +111,39 @@ function setupSliders() {
         document.getElementById('force-scale-value').textContent = scaleSlider.value;
         updateForceScale(parseFloat(scaleSlider.value));
     });
+    
+    // NEW: Particle size slider
+    if (sizeSlider) {
+        sizeSlider.addEventListener('input', () => {
+            document.getElementById('particle-size-value').textContent = sizeSlider.value;
+            updateParticleSize(parseFloat(sizeSlider.value));
+        });
+    }
+    
+    // NEW: Particle opacity slider
+    if (opacitySlider) {
+        opacitySlider.addEventListener('input', () => {
+            document.getElementById('particle-opacity-value').textContent = opacitySlider.value;
+            updateParticleOpacity(parseFloat(opacitySlider.value));
+        });
+    }
 }
 
+// NEW: Update particle size
+function updateParticleSize(size) {
+    if (simulator && simulator.updateParticleAppearance) {
+        const currentOpacity = simulator.config.particleOpacity;
+        simulator.updateParticleAppearance(size, currentOpacity);
+    }
+}
+
+// NEW: Update particle opacity
+function updateParticleOpacity(opacity) {
+    if (simulator && simulator.updateParticleAppearance) {
+        const currentSize = simulator.config.particleSize;
+        simulator.updateParticleAppearance(currentSize, opacity);
+    }
+}
 
 // Debug: Check if particle positions are changing
 let debugCheckCount = 0;

@@ -9,7 +9,9 @@ class ParticleLifeSimulator {
         // Load configuration from particle-life-system.json by default
         this.config = Object.assign({
             numParticles: 1000,
-            numTypes: 3
+            numTypes: 3,
+            particleSize: 0.015,  // NEW: Base particle size (relative to world space)
+            particleOpacity: 0.8  // NEW: Particle opacity (0-1)
         }, config);
 
         this.isRunning = false;
@@ -32,7 +34,9 @@ class ParticleLifeSimulator {
             await this.loadConfiguration();
             console.log("Configuration loaded:", {
                 numParticles: this.config.numParticles,
-                numTypes: this.config.numTypes
+                numTypes: this.config.numTypes,
+                particleSize: this.config.particleSize,
+                particleOpacity: this.config.particleOpacity
             });
 
             // Load shaders with proper paths
@@ -85,8 +89,15 @@ class ParticleLifeSimulator {
             this.config.friction = parseFloat(config.friction) || 10.0;
             this.config.centralForce = config.centralForce || 0;
             this.config.symmetricForces = config.symmetricForces || false;
-            this.config.species = config.species; // <-- this was missing
+            this.config.species = config.species;
 
+            // NEW: Load particle size and opacity if present
+            if (config.particleSize !== undefined) {
+                this.config.particleSize = config.particleSize;
+            }
+            if (config.particleOpacity !== undefined) {
+                this.config.particleOpacity = config.particleOpacity;
+            }
 
             // Extract colors and force matrices from species
             this.config.colors = config.species.map(species => species.color);
@@ -161,7 +172,7 @@ class ParticleLifeSimulator {
     }
 
     initializeParticles() {
-        const { device } = this.gpu;
+        const { device, canvas } = this.gpu;
         const { numParticles, numTypes, simulationSize = [800, 600] } = this.config;
 
         console.log(`Initializing ${numParticles} particles with ${numTypes} types`);
@@ -225,8 +236,8 @@ class ParticleLifeSimulator {
             0.15,   // rMax (maximum interaction radius)
             dt,     // dt (time step)
             friction, // friction coefficient
-            this.config.centralForce || 0.0, // NEW: central force
-            this.config.numTypes || 3        // NEW: numTypes as uint (will cast in shader)
+            this.config.centralForce || 0.0, // central force
+            this.config.numTypes || 3        // numTypes as uint (will cast in shader)
         ]);
 
         console.log("Uniform data:", uniformData);
@@ -258,10 +269,10 @@ class ParticleLifeSimulator {
             for (let j = 0; j < numTypes; j++) {
                 const force = species[i].forces?.[j];
 
-                strengthMatrix.push(force ? force.strength / 67.0 : 0.05); //0
-                radiusMatrix.push(force ? force.radius / 50.0 : 0.05); //:30.0 //0.05
-                collisionStrengthMatrix.push(force ? force.collisionStrength / 75.0 : 0.05); //0
-                collisionRadiusMatrix.push(force ? force.collisionRadius /100.0 : 0.05); //:5.0 //0.02
+                strengthMatrix.push(force ? force.strength / 200.0 : 100); //0
+                radiusMatrix.push(force ? force.radius / 130.0 : 50.0); //:30.0 //0.05
+                collisionStrengthMatrix.push(force ? force.collisionStrength / 30.0 : 10); //0
+                collisionRadiusMatrix.push(force ? force.collisionRadius /275.0 : 18); //:5.0 //0.02
             }
         }
 
@@ -276,7 +287,6 @@ class ParticleLifeSimulator {
         this.radiusBuffer = WebGPUUtils.createBuffer(device, new Float32Array(radiusMatrix), GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST);
         this.collisionStrengthBuffer = WebGPUUtils.createBuffer(device, new Float32Array(collisionStrengthMatrix), GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST);
         this.collisionRadiusBuffer = WebGPUUtils.createBuffer(device, new Float32Array(collisionRadiusMatrix), GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST);
-
 
         const matrixData = new Float32Array(numTypes * numTypes);
         for (let i = 0; i < numTypes; i++) {
@@ -315,7 +325,53 @@ class ParticleLifeSimulator {
         new Float32Array(this.colorBuffer.getMappedRange()).set(colorData);
         this.colorBuffer.unmap();
 
+        // NEW: Create render uniform buffer for particle size and opacity
+        this.createRenderUniformBuffer();
+
         console.log("Particle buffers created successfully");
+    }
+
+    // NEW: Create render uniform buffer
+    createRenderUniformBuffer() {
+        const { device, canvas } = this.gpu;
+        
+        // Calculate aspect ratio to maintain circular particles
+        const aspectRatio = canvas.width / canvas.height;
+        
+        const renderUniformData = new Float32Array([
+            this.config.particleSize,     // Base particle size
+            this.config.particleOpacity,  // Particle opacity
+            aspectRatio,                  // Aspect ratio
+            0.0                          // Padding
+        ]);
+
+        this.renderUniformBuffer = device.createBuffer({
+            size: renderUniformData.byteLength,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+            mappedAtCreation: true
+        });
+        new Float32Array(this.renderUniformBuffer.getMappedRange()).set(renderUniformData);
+        this.renderUniformBuffer.unmap();
+    }
+
+    // NEW: Method to update particle size and opacity
+    updateParticleAppearance(size, opacity) {
+        const { device, canvas } = this.gpu;
+        
+        this.config.particleSize = size;
+        this.config.particleOpacity = opacity;
+        
+        // Calculate aspect ratio
+        const aspectRatio = canvas.width / canvas.height;
+        
+        const renderUniformData = new Float32Array([
+            this.config.particleSize,
+            this.config.particleOpacity,
+            aspectRatio,
+            0.0
+        ]);
+
+        device.queue.writeBuffer(this.renderUniformBuffer, 0, renderUniformData);
     }
 
     createShaderModules(computeShaderCode, renderShaderCode) {
@@ -449,7 +505,7 @@ class ParticleLifeSimulator {
                 })
             ];
 
-            // Create bind group layout for rendering
+            // Create bind group layout for rendering - UPDATED to include render uniform
             this.renderBindGroupLayout = device.createBindGroupLayout({
                 label: 'render-bind-group-layout',
                 entries: [
@@ -462,18 +518,25 @@ class ParticleLifeSimulator {
                         binding: 1,
                         visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
                         buffer: { type: 'read-only-storage' }
+                    },
+                    // NEW: Render uniform buffer
+                    {
+                        binding: 2,
+                        visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
+                        buffer: { type: 'uniform' }
                     }
                 ]
             });
 
-            // Create render bind groups
+            // Create render bind groups - UPDATED to include render uniform
             this.renderBindGroups = [
                 device.createBindGroup({
                     label: 'render-bind-group-0',
                     layout: this.renderBindGroupLayout,
                     entries: [
                         { binding: 0, resource: { buffer: this.particleBuffers[0] } },
-                        { binding: 1, resource: { buffer: this.colorBuffer } }
+                        { binding: 1, resource: { buffer: this.colorBuffer } },
+                        { binding: 2, resource: { buffer: this.renderUniformBuffer } }
                     ]
                 }),
                 device.createBindGroup({
@@ -481,7 +544,8 @@ class ParticleLifeSimulator {
                     layout: this.renderBindGroupLayout,
                     entries: [
                         { binding: 0, resource: { buffer: this.particleBuffers[1] } },
-                        { binding: 1, resource: { buffer: this.colorBuffer } }
+                        { binding: 1, resource: { buffer: this.colorBuffer } },
+                        { binding: 2, resource: { buffer: this.renderUniformBuffer } }
                     ]
                 })
             ];
