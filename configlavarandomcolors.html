@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Particle Life Config</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f0f0;
+        }
+
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .control-section {
+            width: 100%;
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .slider-container label {
+            min-width: 150px;
+            font-weight: bold;
+        }
+
+        input[type="range"] {
+            flex: 1;
+            height: 6px;
+            border-radius: 3px;
+            background: #ddd;
+            outline: none;
+        }
+
+        .value-display {
+            min-width: 40px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 18px;
+            color: #333;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            background-color: #007bff;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            margin: 5px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        .generate-btn {
+            background-color: #28a745;
+            font-size: 18px;
+            padding: 15px 30px;
+        }
+
+        .generate-btn:hover {
+            background-color: #1e7e34;
+        }
+
+        .formula-section {
+            text-align: left;
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+        }
+
+        .preview-colors {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+        }
+
+        .color-dot {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: 2px solid #333;
+        }
+
+        .output-section {
+            width: 100%;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #dee2e6;
+        }
+
+        .json-output {
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Particle Life Configuration</h1>
+
+        <!-- Main Controls -->
+        <div class="control-section">
+            <h3>Basic Settings</h3>
+
+            <div class="slider-container">
+                <label>Number of Particle Types:</label>
+                <input type="range" id="numTypes" min="1" max="6" value="5" oninput="updateTypes()">
+                <div class="value-display" id="numTypes-value">5</div>
+            </div>
+
+            <div class="slider-container">
+                <label>Number of Particles:</label>
+                <input type="range" id="numParticles" min="500" max="12000" step="100" value="12000"
+                    oninput="updateValue('numParticles')">
+                <div class="value-display" id="numParticles-value">12000</div>
+            </div>
+
+            <div class="slider-container">
+                <label>Force Strength Scale:</label>
+                <input type="range" id="forceScale" min="0.1" max="3" step="0.1" value="1"
+                    oninput="updateValue('forceScale')">
+                <div class="value-display" id="forceScale-value">1</div>
+            </div>
+
+            <div class="slider-container">
+                <label>Interaction Radius:</label>
+                <input type="range" id="radius" min="5" max="40" value="20" oninput="updateValue('radius')">
+                <div class="value-display" id="radius-value">20</div>
+            </div>
+        </div>
+
+        <!-- Color Preview -->
+        <div class="control-section">
+            <h3>Particle Types Preview</h3>
+            <div class="preview-colors" id="colorPreview">
+                <!-- Colors will be generated here -->
+            </div>
+        </div>
+
+        <!-- Force Formula -->
+        <div class="control-section">
+            <h3>Force Calculation Formula</h3>
+            <div class="formula-section" id="formulaDisplay">
+                Your custom formula will be displayed here...
+            </div>
+        </div>
+
+        <!-- Generate Button -->
+        <button class="generate-btn" onclick="generateConfiguration()">Generate New Simulation</button>
+
+        <!-- Output -->
+        <div class="control-section output-section">
+            <h3>Generated Configuration</h3>
+            <button onclick="copyConfig()">Copy to Clipboard</button>
+            <button onclick="downloadConfig()">Download JSON</button>
+            <button onclick="applyToSimulator()">Apply to Simulator</button>
+            <div class="json-output" id="configOutput">
+                Generated configuration will appear here...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentConfig = null;
+
+        // Update slider values
+        function updateValue(id) {
+            const slider = document.getElementById(id);
+            const display = document.getElementById(id + '-value');
+            display.textContent = slider.value;
+            updatePreview();
+        }
+
+        // Update number of types and regenerate colors
+        function updateTypes() {
+            updateValue('numTypes');
+            updateColorPreview();
+            updateFormulaDisplay();
+        }
+
+        // Generate random colors for particle types
+        function generateColors(numTypes) {
+            const colors = [];
+            for (let i = 0; i < numTypes; i++) {
+                // Generate completely random colors
+                const r = Math.random() * 0.7 + 0.3; // 0.3-1.0 (avoid too dark)
+                const g = Math.random() * 0.7 + 0.3;
+                const b = Math.random() * 0.7 + 0.3;
+                colors.push([r, g, b]);
+            }
+            return colors;
+        }
+
+        // Update color preview
+        function updateColorPreview() {
+            const numTypes = parseInt(document.getElementById('numTypes').value);
+            const colors = generateColors(numTypes);
+            const preview = document.getElementById('colorPreview');
+
+            preview.innerHTML = '';
+            colors.forEach((color, i) => {
+                const dot = document.createElement('div');
+                dot.className = 'color-dot';
+                dot.style.backgroundColor = `rgb(${Math.floor(color[0] * 255)}, ${Math.floor(color[1] * 255)}, ${Math.floor(color[2] * 255)})`;
+                dot.title = `Type ${i + 1}`;
+                preview.appendChild(dot);
+            });
+        }
+
+        // ADVANCED "LAVA LAMP" FORMULA - Based on deep analysis of your favorite!
+        function calculateForce(typeA, typeB, numTypes, forceScale, radius) {
+            // Key insights from analysis:
+            // 1. Asymmetric relationships (A→B ≠ B→A)
+            // 2. Imbalanced populations 
+            // 3. At least one self-repelling species
+            // 4. Multi-scale interactions (2.5x to 31.7x range)
+            // 5. High collision forces vs interaction forces
+            // 6. ~50/50 attraction/repulsion but not symmetric
+
+            // Create deterministic but varied patterns
+            const seed1 = (typeA * 7 + typeB * 13 + numTypes * 3) % 1000;
+            const seed2 = (typeA * 11 + typeB * 17 + numTypes * 5) % 1000;
+            const random1 = (seed1 * 9301 + 49297) % 233280 / 233280.0;
+            const random2 = (seed2 * 4171 + 7919) % 233280 / 233280.0;
+            const random3 = (seed1 * 1231 + seed2 * 3571) % 233280 / 233280.0;
+            const random4 = (seed2 * 8191 + seed1 * 1597) % 233280 / 233280.0;
+
+            let strength, interactionRadius, collisionStrength, collisionRadius;
+
+            if (typeA === typeB) {
+                // SELF-INTERACTIONS: Make one species self-repelling (antisocial)
+                if (typeA === Math.floor(numTypes * 0.6)) { // Usually the 3rd species in 5-type system
+                    // The "antisocial" species - repels itself
+                    strength = -(40 + random1 * 40) * forceScale; // -40 to -80
+                    interactionRadius = 3 + random2 * 8; // Small radius for self-repulsion
+                } else {
+                    // Normal self-attraction for clustering
+                    strength = (30 + random1 * 65) * forceScale; // 30-95 (like your config)
+                    interactionRadius = 12 + random2 * 18; // 12-30
+                }
+            } else {
+                // CROSS-TYPE INTERACTIONS: Create asymmetric relationships
+
+                // Use both typeA and typeB to ensure A→B ≠ B→A
+                const asymmetricSeed = (typeA * 23 + typeB * 41) % 1000;
+                const asymmetricRandom = (asymmetricSeed * 6121 + 3571) % 233280 / 233280.0;
+
+                // 52% attraction, 48% repulsion (matches your config)
+                if (asymmetricRandom < 0.52) {
+                    // Attraction with wide strength range
+                    strength = (25 + random1 * 75) * forceScale; // 25-100
+                } else {
+                    // Repulsion with similar range
+                    strength = -(20 + random1 * 80) * forceScale; // -20 to -100
+                }
+
+                // MULTI-SCALE RADII: Create 2.5x to 31x range like your config
+                const radiusType = random2;
+                if (radiusType < 0.15) {
+                    // Short range (like Red→Mauve 2.5 units)
+                    interactionRadius = 2.5 + random3 * 5; // 2.5-7.5
+                } else if (radiusType < 0.85) {
+                    // Medium range (most interactions)
+                    interactionRadius = 8 + random3 * 22; // 8-30
+                } else {
+                    // Long range (like Cyan→Mauve 31.7 units)
+                    interactionRadius = 28 + random3 * 4; // 28-32
+                }
+            }
+
+            // HIGH COLLISION FORCES: 200x stronger than interaction forces (like your config)
+            // Your config: avg collision 857 vs avg interaction 4
+            const baseCollisionStrength = Math.abs(strength) * (15 + random4 * 10); // 15-25x multiplier
+            collisionStrength = Math.max(200, baseCollisionStrength + random4 * 800); // 200-1500 range
+
+            // SMALL COLLISION RADII: ~26% of interaction radius (matches your config)
+            const collisionRatio = 0.15 + random1 * 0.2; // 15-35% of interaction radius
+            collisionRadius = Math.max(0.4, interactionRadius * collisionRatio);
+
+            return {
+                strength: strength,
+                radius: interactionRadius * (radius / 20), // Scale with slider
+                collisionStrength: collisionStrength,
+                collisionRadius: collisionRadius
+            };
+        }
+
+        // IMBALANCED POPULATION GENERATOR
+        function generateImbalancedPopulations(numTypes) {
+            // Create population distribution like your favorite:
+            // 2 dominant (24.7%, 27.6%), 2 rare (5.7%, 6.3%), 1 moderate (10.3%)
+
+            const weights = [];
+
+            if (numTypes === 3) {
+                // 1 dominant, 1 moderate, 1 rare
+                weights.push(0.45, 0.35, 0.20);
+            } else if (numTypes === 4) {
+                // 2 dominant, 1 moderate, 1 rare
+                weights.push(0.35, 0.30, 0.25, 0.10);
+            } else if (numTypes === 5) {
+                // Like your favorite: 2 dominant, 1 moderate, 2 rare
+                weights.push(0.25, 0.28, 0.22, 0.15, 0.10);
+            } else if (numTypes === 6) {
+                // 2 dominant, 2 moderate, 2 rare
+                weights.push(0.25, 0.23, 0.18, 0.16, 0.12, 0.06);
+            } else {
+                // Default: one dominant, others decreasing
+                for (let i = 0; i < numTypes; i++) {
+                    weights.push(0.4 / (i + 1));
+                }
+            }
+
+            // Normalize to sum to 1
+            const sum = weights.reduce((a, b) => a + b);
+            return weights.map(w => w / sum);
+        }
+
+        // Update formula display for advanced features
+        function updateFormulaDisplay() {
+            const numTypes = parseInt(document.getElementById('numTypes').value);
+            const forceScale = parseFloat(document.getElementById('forceScale').value);
+            const radius = parseInt(document.getElementById('radius').value);
+
+            let formula = `ADVANCED "Lava Lamp" Generator for ${numTypes} types:\n\n`;
+            formula += `🌋 SPECIAL FEATURES INCLUDED:\n`;
+            formula += `• ASYMMETRIC RELATIONSHIPS: A→B ≠ B→A (creates flow)\n`;
+            formula += `• IMBALANCED POPULATIONS: Dominant/moderate/rare species\n`;
+            formula += `• ANTISOCIAL SPECIES: At least one self-repelling type\n`;
+            formula += `• MULTI-SCALE RADII: 2.5x to 32x range (like your favorite)\n`;
+            formula += `• HIGH COLLISION FORCES: 200x stronger than interactions\n`;
+            formula += `• BALANCED FORCES: ~52% attraction, 48% repulsion\n\n`;
+
+            formula += `⚙️ CURRENT SETTINGS:\n`;
+            formula += `• Force Scale: ${forceScale}x\n`;
+            formula += `• Interaction Strength: ${Math.round(25 * forceScale)}-${Math.round(100 * forceScale)}\n`;
+            formula += `• Radius Range: ${Math.round(2.5 * radius / 20)}-${Math.round(32 * radius / 20)} units\n`;
+            formula += `• Collision Forces: 200-1500+\n`;
+            formula += `• Population: Imbalanced (2 dominant, others varied)\n\n`;
+
+            formula += `🎨 EXPECTED BEHAVIOR:\n`;
+            formula += `• Large flowing clusters that merge and split\n`;
+            formula += `• Constant motion (no equilibrium)\n`;
+            formula += `• Rare species create disruption events\n`;
+            formula += `• Organic, fluid "lava lamp" dynamics!`;
+
+            document.getElementById('formulaDisplay').textContent = formula;
+        }
+
+        // Generate full configuration with all special features
+        function generateConfiguration() {
+            const numTypes = parseInt(document.getElementById('numTypes').value);
+            const numParticles = parseInt(document.getElementById('numParticles').value);
+            const forceScale = parseFloat(document.getElementById('forceScale').value);
+            const radius = parseInt(document.getElementById('radius').value);
+
+            const colors = generateColors(numTypes);
+            const species = [];
+
+            // FEATURE 1: Generate imbalanced populations (like your favorite)
+            const spawnWeights = generateImbalancedPopulations(numTypes);
+
+            // Generate each species
+            for (let i = 0; i < numTypes; i++) {
+                const forces = [];
+
+                // Calculate forces to all other types (creates asymmetric relationships)
+                for (let j = 0; j < numTypes; j++) {
+                    forces.push(calculateForce(i, j, numTypes, forceScale, radius));
+                }
+
+                species.push({
+                    color: [...colors[i], 1.0], // Add alpha
+                    forces: forces,
+                    spawnWeight: spawnWeights[i] // IMBALANCED populations
+                });
+            }
+
+            // Create full configuration
+            currentConfig = {
+                particleCount: numParticles,
+                species: species,
+                simulationSize: [1200, 750],
+                friction: "50", // Matches your favorite
+                centralForce: 0, // Matches your favorite
+                symmetricForces: false // CRITICAL: Enables asymmetric relationships
+            };
+
+            // Display JSON
+            document.getElementById('configOutput').textContent = JSON.stringify(currentConfig, null, 2);
+
+            // Show analysis of what was generated
+            displayGeneratedAnalysis();
+        }
+
+        function displayGeneratedAnalysis() {
+            if (!currentConfig) return;
+
+            let analysis = "\n// GENERATED FEATURES ANALYSIS:\n";
+            analysis += "// ================================\n";
+
+            // Population analysis
+            analysis += "// 🎯 POPULATION DISTRIBUTION:\n";
+            currentConfig.species.forEach((species, i) => {
+                const percentage = (species.spawnWeight * 100).toFixed(1);
+                const type = percentage > 20 ? "DOMINANT" : percentage < 15 ? "RARE" : "MODERATE";
+                analysis += `//    Species ${i}: ${percentage}% (${type})\n`;
+            });
+
+            // Find self-repelling species
+            analysis += "// 💙 ANTISOCIAL SPECIES:\n";
+            let foundAntisocial = false;
+            currentConfig.species.forEach((species, i) => {
+                if (species.forces[i].strength < 0) {
+                    analysis += `//    Species ${i}: REPELS ITSELF (${species.forces[i].strength.toFixed(1)})\n`;
+                    foundAntisocial = true;
+                }
+            });
+            if (!foundAntisocial) {
+                analysis += "//    None found - try regenerating for more variety\n";
+            }
+
+            // Asymmetric relationships
+            analysis += "// 🔄 ASYMMETRIC RELATIONSHIPS:\n";
+            let asymmetricCount = 0;
+            for (let i = 0; i < currentConfig.species.length; i++) {
+                for (let j = i + 1; j < currentConfig.species.length; j++) {
+                    const forceAB = currentConfig.species[i].forces[j].strength;
+                    const forceBA = currentConfig.species[j].forces[i].strength;
+                    const difference = Math.abs(forceAB - forceBA);
+                    if (difference > 20) { // Significant asymmetry
+                        analysis += `//    ${i}→${j}: ${forceAB.toFixed(1)} vs ${j}→${i}: ${forceBA.toFixed(1)}\n`;
+                        asymmetricCount++;
+                    }
+                }
+            }
+            analysis += `//    Found ${asymmetricCount} significant asymmetric relationships\n`;
+
+            // Force distribution
+            const allForces = [];
+            currentConfig.species.forEach(species => {
+                species.forces.forEach(force => allForces.push(force.strength));
+            });
+            const attractions = allForces.filter(f => f > 0).length;
+            const repulsions = allForces.filter(f => f < 0).length;
+            analysis += `// ⚖️  FORCE BALANCE: ${attractions} attractions, ${repulsions} repulsions\n`;
+
+            analysis += "// 🌋 Ready for lava lamp dynamics!\n";
+
+            // Append analysis to the JSON output
+            const currentJson = document.getElementById('configOutput').textContent;
+            document.getElementById('configOutput').textContent = currentJson + analysis;
+        }
+
+        // Copy configuration to clipboard
+        function copyConfig() {
+            if (!currentConfig) {
+                alert('Generate a configuration first!');
+                return;
+            }
+
+            navigator.clipboard.writeText(JSON.stringify(currentConfig, null, 2)).then(() => {
+                alert('Configuration copied to clipboard!');
+            });
+        }
+
+        // Download configuration as JSON file
+        function downloadConfig() {
+            if (!currentConfig) {
+                alert('Generate a configuration first!');
+                return;
+            }
+
+            const blob = new Blob([JSON.stringify(currentConfig, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'particle-life-system.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Apply to your existing simulator (you'll need to implement this)
+        function applyToSimulator() {
+            if (!currentConfig) {
+                alert('Generate a configuration first!');
+                return;
+            }
+
+            // This is where you'd integrate with your existing simulator
+            // For now, just download the file
+            alert('Configuration ready! Download the JSON file and replace your particle-life-system.json');
+            downloadConfig();
+        }
+
+        // Utility function
+        function hslToRgb(h, s, l) {
+            h /= 360;
+            const a = s * Math.min(l, 1 - l);
+            const f = (n, k = (n + h / (1 / 12)) % 12) => l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+            return [f(0), f(8), f(4)];
+        }
+
+        function updatePreview() {
+            updateFormulaDisplay();
+        }
+
+        // Initialize
+        updateTypes();
+        updatePreview();
+    </script>
+</body>
+
+</html>

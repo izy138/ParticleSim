@@ -1,4 +1,4 @@
-// Simplified render shader for particle life simulator
+// Updated render shader with size and opacity controls
 
 // Vertex shader output
 struct VertexOutput {
@@ -13,6 +13,16 @@ struct VertexOutput {
 
 // Color buffer
 @group(0) @binding(1) var<storage, read> colors: array<vec4<f32>>;
+
+// NEW: Render uniform buffer for particle appearance
+struct RenderUniforms {
+    particleSize: f32,
+    particleOpacity: f32,
+    aspectRatio: f32,
+    padding: f32,
+}
+
+@group(0) @binding(2) var<uniform> renderUniforms: RenderUniforms;
 
 // Vertex shader
 @vertex
@@ -29,8 +39,8 @@ fn vertexMain(
     let particleType = u32(particles[baseIdx + 4u]);
     let particlePos = vec2<f32>(particles[baseIdx], particles[baseIdx + 1u]);
     
-    // Particle size
-    let particleSize = 0.01;
+    // Use particle size from uniform buffer
+    let particleSize = renderUniforms.particleSize;
     
     // Define quad corners
     var quadPos: vec2<f32>;
@@ -44,8 +54,13 @@ fn vertexMain(
         default: { quadPos = vec2<f32>(0.0, 0.0); }   // Should never happen
     }
     
+    // Apply aspect ratio correction to maintain circular particles
+    // Scale X coordinate by aspect ratio to counteract canvas stretching
+    var correctedQuadPos = quadPos;
+    correctedQuadPos.x /= renderUniforms.aspectRatio;
+    
     // Calculate final vertex position
-    let worldPos = particlePos + quadPos * particleSize;
+    let worldPos = particlePos + correctedQuadPos * particleSize;
     
     // Get color for particle type
     let color = colors[particleType];
@@ -67,6 +82,9 @@ fn fragmentMain(input: VertexOutput) -> @location(0) vec4<f32> {
     
     // Create circular particles with smooth edges
     var alpha = 1.0 - smoothstep(0.8, 1.0, distFromCenter);
+    
+    // Apply opacity from uniform buffer
+    alpha *= renderUniforms.particleOpacity;
     
     // Apply color with calculated alpha
     var color = input.color;

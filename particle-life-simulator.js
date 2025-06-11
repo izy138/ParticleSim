@@ -10,8 +10,8 @@ class ParticleLifeSimulator {
         this.config = Object.assign({
             numParticles: 1000,
             numTypes: 3,
-            particleSize: 0.015,  // NEW: Base particle size (relative to world space)
-            particleOpacity: 0.8  // NEW: Particle opacity (0-1)
+            particleSize: 0.007,  // NEW: Base particle size (relative to world space)
+            particleOpacity: 0.75  // NEW: Particle opacity (0-1)
         }, config);
 
         this.isRunning = false;
@@ -72,43 +72,47 @@ class ParticleLifeSimulator {
     }
 
     async loadConfiguration() {
-        try {
-            // Try to load particle-life-system.json
-            const response = await fetch('particle-life-system.json');
-            if (!response.ok) {
-                console.log("No particle-life-system.json found, using default configuration");
-                return;
-            }
-
-            const config = await response.json();
-
-            // Override configuration with loaded values
-            this.config.numParticles = config.particleCount;
-            this.config.numTypes = config.species.length;
-            this.config.simulationSize = config.simulationSize;
-            this.config.friction = parseFloat(config.friction) || 10.0;
-            this.config.centralForce = config.centralForce || 0;
-            this.config.symmetricForces = config.symmetricForces || false;
-            this.config.species = config.species;
-
-            // NEW: Load particle size and opacity if present
-            if (config.particleSize !== undefined) {
-                this.config.particleSize = config.particleSize;
-            }
-            if (config.particleOpacity !== undefined) {
-                this.config.particleOpacity = config.particleOpacity;
-            }
-
-            // Extract colors and force matrices from species
-            this.config.colors = config.species.map(species => species.color);
-            this.config.attractionMatrix = this.extractAttractionMatrix(config.species);
-
-            console.log("Loaded configuration from particle-life-system.json");
-            console.log("Attraction matrix sample:", this.config.attractionMatrix[0]);
-        } catch (error) {
-            console.warn("Could not load particle-life-system.json:", error.message);
+    try {
+        const response = await fetch('particle-life-system.json');
+        if (!response.ok) {
+            console.log("No particle-life-system.json found, using default configuration");
+            return;
         }
+
+        const config = await response.json();
+
+        // Override configuration with loaded values
+        this.config.numParticles = config.particleCount;
+        this.config.numTypes = config.species.length;
+        this.config.simulationSize = config.simulationSize;
+        
+        // FIXED: Parse friction as number, not string
+        this.config.friction = parseFloat(config.friction) || 50.0;
+        
+        this.config.centralForce = config.centralForce || 0;
+        this.config.symmetricForces = config.symmetricForces || false;
+        this.config.species = config.species;
+
+        // Load particle size and opacity if present
+        if (config.particleSize !== undefined) {
+            this.config.particleSize = config.particleSize;
+        }
+        if (config.particleOpacity !== undefined) {
+            this.config.particleOpacity = config.particleOpacity;
+        }
+
+        // Extract colors and force matrices from species
+        this.config.colors = config.species.map(species => species.color);
+        this.config.attractionMatrix = this.extractAttractionMatrix(config.species);
+
+        console.log("Loaded configuration from particle-life-system.json");
+        console.log("Friction value from JSON:", this.config.friction);
+    } catch (error) {
+        console.warn("Could not load particle-life-system.json:", error.message);
+        // Set default friction if loading fails
+        this.config.friction = 50.0;
     }
+}
 
     extractAttractionMatrix(species) {
         const numTypes = species.length;
@@ -227,22 +231,23 @@ class ParticleLifeSimulator {
 
         // Create uniform buffer for simulation parameters
         // Use the proper dt value from config
-        const frictionHalfLife = this.config.friction * 0.001; // Convert to seconds
-        const dt = 0.001; // This is the time step
+        const frictionHalfLife = this.config.friction * 0.001; // Convert JSON value to seconds
+        const dt = 0.002; // Time step
         const friction = Math.exp(-Math.log(2) * dt / frictionHalfLife);
 
         const uniformData = new Float32Array([
             0.02,   // radius (particle radius)
             0.15,   // rMax (maximum interaction radius)
             dt,     // dt (time step)
-            friction, // friction coefficient
+            friction, // friction coefficient (calculated from half-life)
             this.config.centralForce || 0.0, // central force
-            this.config.numTypes || 3        // numTypes as uint (will cast in shader)
+            this.config.numTypes || 3        // numTypes
         ]);
 
-        console.log("Uniform data:", uniformData);
-        console.log("Friction half-life:", frictionHalfLife);
-        console.log("Calculated friction:", friction);
+        console.log("Initial friction setup:");
+        console.log("- JSON friction value:", this.config.friction);
+        console.log("- Friction half-life (seconds):", frictionHalfLife);
+        console.log("- Calculated friction coefficient:", friction);
 
         this.uniformBuffer = device.createBuffer({
             size: uniformData.byteLength,
@@ -250,7 +255,7 @@ class ParticleLifeSimulator {
             mappedAtCreation: true
         });
         new Float32Array(this.uniformBuffer.getMappedRange()).set(uniformData);
-        this.uniformBuffer.unmap();        
+        this.uniformBuffer.unmap();
 
         // Create attraction matrix buffer
         if (!this.config.attractionMatrix) {
@@ -269,10 +274,57 @@ class ParticleLifeSimulator {
             for (let j = 0; j < numTypes; j++) {
                 const force = species[i].forces?.[j];
 
-                strengthMatrix.push(force ? force.strength / 200.0 : 100); //0
-                radiusMatrix.push(force ? force.radius / 130.0 : 50.0); //:30.0 //0.05
-                collisionStrengthMatrix.push(force ? force.collisionStrength / 30.0 : 10); //0
-                collisionRadiusMatrix.push(force ? force.collisionRadius /275.0 : 18); //:5.0 //0.02
+                strengthMatrix.push(force ? force.strength / 200.0 : 100); //200 //50 //80
+                radiusMatrix.push(force ? force.radius / 130 : 15); //130 //80 //80
+                collisionStrengthMatrix.push(force ? force.collisionStrength / 30.0 : 15); //30 //45 //110
+                collisionRadiusMatrix.push(force ? force.collisionRadius / 275.0 : 15); //275 //205 //135
+                //default ONE
+                //friction- 0.0016
+                //200
+                //130
+                //30
+                //275
+
+                //TWO //1
+                // 0.0011
+                // 65  //50 //80
+                // 92.5 //130 //80
+                // 110 //45 //110
+                // 200 //205 //135
+
+                //0.5 // 0.1
+                //THREE // FOUR & FIVE
+                // 35 // 35
+                // 92.5 // 83
+                // 60 // 60
+                // 100 //90
+
+
+
+                //FIVE
+                //
+                //
+                //
+                //
+
+                //two-test
+                //0.008 //json friction-50
+                //45
+                //205
+                //30
+                //195
+
+                //three-test
+                //0.008 //json friction-30
+                //100
+                //40
+                //30
+                //100
+
+                //three-good
+                //default
+                //friction- 0.001
+
             }
         }
 
@@ -334,10 +386,10 @@ class ParticleLifeSimulator {
     // NEW: Create render uniform buffer
     createRenderUniformBuffer() {
         const { device, canvas } = this.gpu;
-        
+
         // Calculate aspect ratio to maintain circular particles
         const aspectRatio = canvas.width / canvas.height;
-        
+
         const renderUniformData = new Float32Array([
             this.config.particleSize,     // Base particle size
             this.config.particleOpacity,  // Particle opacity
@@ -357,13 +409,13 @@ class ParticleLifeSimulator {
     // NEW: Method to update particle size and opacity
     updateParticleAppearance(size, opacity) {
         const { device, canvas } = this.gpu;
-        
+
         this.config.particleSize = size;
         this.config.particleOpacity = opacity;
-        
+
         // Calculate aspect ratio
         const aspectRatio = canvas.width / canvas.height;
-        
+
         const renderUniformData = new Float32Array([
             this.config.particleSize,
             this.config.particleOpacity,
@@ -422,7 +474,7 @@ class ParticleLifeSimulator {
             this.computeBindGroupLayout = device.createBindGroupLayout({
                 label: 'compute-bind-group-layout',
                 entries: [
-                            // Particle buffers
+                    // Particle buffers
                     {
                         binding: 0,
                         visibility: GPUShaderStage.COMPUTE,
@@ -433,20 +485,20 @@ class ParticleLifeSimulator {
                         visibility: GPUShaderStage.COMPUTE,
                         buffer: { type: 'storage' }
                     },
-                            // Simulation parameters
+                    // Simulation parameters
                     {
                         binding: 2,
                         visibility: GPUShaderStage.COMPUTE,
                         buffer: { type: 'uniform' }
                     },
-                            // Base attraction matrix
+                    // Base attraction matrix
                     {
                         binding: 3,
                         visibility: GPUShaderStage.COMPUTE,
                         buffer: { type: 'read-only-storage' }
                     },
                     {
-                             // Extended force parameters
+                        // Extended force parameters
                         binding: 4,
                         visibility: GPUShaderStage.COMPUTE,
                         buffer: { type: 'read-only-storage' }
@@ -631,7 +683,8 @@ class ParticleLifeSimulator {
 
         console.log("Starting simulation...");
         this.isRunning = true;
-        console.log("Starting with buffer index:", this.bufferIndex);
+        this.isPaused = false;  // <-- NEW: Ensure not paused when starting
+        // console.log("Starting with buffer index:", this.bufferIndex);
         this.frameId = requestAnimationFrame(this.update.bind(this));
     }
 
@@ -640,19 +693,39 @@ class ParticleLifeSimulator {
 
         console.log("Stopping simulation...");
         this.isRunning = false;
+        this.isPaused = false;  // <-- NEW: Reset pause state when stopping
         if (this.frameId) {
             cancelAnimationFrame(this.frameId);
             this.frameId = null;
         }
     }
 
-    reset() {
-        console.log("Resetting simulation...");
-        this.stop();
-        this.bufferIndex = 0; // Reset buffer index on explicit reset
-        this.initializeParticles();
-        this.createBindGroups();
-        this.start();
+    // NEW: Pause method
+    pause() {
+        if (!this.isRunning) return;
+
+        this.isPaused = true;
+        console.log("Simulation paused");
+    }
+
+    // NEW: Unpause method
+    unpause() {
+        if (!this.isRunning || !this.isPaused) return;
+
+        this.isPaused = false;
+        console.log("Simulation unpaused");
+        // No need to restart the loop - update() will continue automatically
+    }
+
+    // NEW: Toggle pause state
+    togglePause() {
+        if (!this.isRunning) return;
+
+        if (this.isPaused) {
+            this.unpause();
+        } else {
+            this.pause();
+        }
     }
 
     update() {
@@ -680,13 +753,12 @@ class ParticleLifeSimulator {
             // Increment frame counter first
             this.frameCount++;
 
-            // DEBUG: Log frame info periodically
-            if (this.frameCount === 1 || this.frameCount % this.debugInterval === 0) {
-                console.log(`Frame ${this.frameCount} - Starting with buffer index: ${this.bufferIndex}`);
-            }
+            // // DEBUG: Log frame info periodically
+            // if (this.frameCount === 1 || this.frameCount % this.debugInterval === 0) {
+            //     console.log(`Frame ${this.frameCount} - Starting with buffer index: ${this.bufferIndex}`);
+            // }
 
-            // CRITICAL FIX: Get fresh texture each frame
-            // This prevents the device association errors
+            // Get fresh texture each frame
             const currentTexture = context.getCurrentTexture();
             const textureView = currentTexture.createView();
 
@@ -695,32 +767,28 @@ class ParticleLifeSimulator {
                 label: 'frame-command-encoder'
             });
 
-            // Compute pass - process particles
-            const computePass = commandEncoder.beginComputePass({
-                label: 'compute-pass'
-            });
+            // NEW: Only run compute pass if not paused
+            if (!this.isPaused) {
+                // Compute pass - process particles
+                const computePass = commandEncoder.beginComputePass({
+                    label: 'compute-pass'
+                });
 
-            computePass.setPipeline(this.computePipeline);
-            // Read from current buffer, write to the other buffer
-            computePass.setBindGroup(0, this.computeBindGroups[this.bufferIndex]);
+                computePass.setPipeline(this.computePipeline);
+                computePass.setBindGroup(0, this.computeBindGroups[this.bufferIndex]);
 
-            // Dispatch compute shader
-            const workgroupSize = 64;
-            const numWorkgroups = Math.ceil(this.config.numParticles / workgroupSize);
+                // Dispatch compute shader
+                const workgroupSize = 64;
+                const numWorkgroups = Math.ceil(this.config.numParticles / workgroupSize);
 
-            // DEBUG: Log workgroup info periodically
-            if (this.frameCount === 1 || this.frameCount % this.debugInterval === 0) {
-                console.log(`Using compute bind group ${this.bufferIndex} (read from buffer ${this.bufferIndex}, write to buffer ${1 - this.bufferIndex})`);
-                console.log(`Dispatching ${numWorkgroups} workgroups for ${this.config.numParticles} particles`);
+                computePass.dispatchWorkgroups(numWorkgroups);
+                computePass.end();
+
+                // Flip buffer index AFTER compute pass completes
+                this.bufferIndex = 1 - this.bufferIndex;
             }
 
-            computePass.dispatchWorkgroups(numWorkgroups);
-            computePass.end();
-
-            // IMPORTANT: Flip buffer index AFTER compute pass completes
-            this.bufferIndex = 1 - this.bufferIndex;
-
-            // Render pass - draw particles
+            // Always render (even when paused) to show current state
             const renderPass = commandEncoder.beginRenderPass({
                 label: 'render-pass',
                 colorAttachments: [
@@ -734,26 +802,166 @@ class ParticleLifeSimulator {
             });
 
             renderPass.setPipeline(this.renderPipeline);
-            // Render from the buffer that was just updated
             renderPass.setBindGroup(0, this.renderBindGroups[this.bufferIndex]);
-
-            // Draw particles using instancing
             renderPass.draw(6, this.config.numParticles);
             renderPass.end();
 
             // Submit commands
             device.queue.submit([commandEncoder.finish()]);
 
-            // DEBUG: Log buffer state after operations
-            if (this.frameCount === 1 || this.frameCount % this.debugInterval === 0) {
-                console.log(`After flip - Now rendering from buffer index: ${this.bufferIndex}`);
-                console.log("---");
-            }
         } catch (error) {
             console.error("Error in render:", error);
-            // Stop the simulation on error to prevent error spam
             this.stop();
             WebGPUUtils.showError(`Rendering error: ${error.message}`);
         }
     }
 }
+    // start() {
+    //     if (this.isRunning) return;
+
+    //     console.log("Starting simulation...");
+    //     this.isRunning = true;
+    //     console.log("Starting with buffer index:", this.bufferIndex);
+    //     this.frameId = requestAnimationFrame(this.update.bind(this));
+    // }
+
+    //  // NEW: Pause method
+    // pause() {
+    //     if (!this.isRunning) return;
+
+    //     this.isPaused = true;
+    //     console.log("Simulation paused");
+    // }
+
+    //    // NEW: Unpause method
+    // unpause() {
+    //     if (!this.isRunning || !this.isPaused) return;
+
+    //     this.isPaused = false;
+    //     console.log("Simulation unpaused");
+    //     // No need to restart the loop - update() will continue automatically
+    // }
+
+    // stop() {
+    //     if (!this.isRunning) return;
+
+    //     console.log("Stopping simulation...");
+    //     this.isRunning = false;
+    //     if (this.frameId) {
+    //         cancelAnimationFrame(this.frameId);
+    //         this.frameId = null;
+    //     }
+    // }
+
+
+    // reset() {
+    //     console.log("Resetting simulation...");
+    //     this.stop();
+    //     this.bufferIndex = 0; // Reset buffer index on explicit reset
+    //     this.initializeParticles();
+    //     this.createBindGroups();
+    //     this.start();
+    // }
+
+    // update() {
+    //     if (!this.isRunning) return;
+
+    //     try {
+    //         this.render();
+    //         this.frameId = requestAnimationFrame(this.update.bind(this));
+    //     } catch (error) {
+    //         console.error("Error in update loop:", error);
+    //         this.stop();
+    //         WebGPUUtils.showError(`Simulation error: ${error.message}`);
+    //     }
+    // }
+
+    // render() {
+    //     if (!this.gpu || !this.gpu.device || !this.gpu.context) {
+    //         console.error("GPU context is invalid");
+    //         return;
+    //     }
+
+    //     const { device, context } = this.gpu;
+
+    //     try {
+    //         // Increment frame counter first
+    //         this.frameCount++;
+
+    //         // DEBUG: Log frame info periodically
+    //         if (this.frameCount === 1 || this.frameCount % this.debugInterval === 0) {
+    //             console.log(`Frame ${this.frameCount} - Starting with buffer index: ${this.bufferIndex}`);
+    //         }
+
+    //         // CRITICAL FIX: Get fresh texture each frame
+    //         // This prevents the device association errors
+    //         const currentTexture = context.getCurrentTexture();
+    //         const textureView = currentTexture.createView();
+
+    //         // Create command encoder for this frame
+    //         const commandEncoder = device.createCommandEncoder({
+    //             label: 'frame-command-encoder'
+    //         });
+
+    //         // Compute pass - process particles
+    //         const computePass = commandEncoder.beginComputePass({
+    //             label: 'compute-pass'
+    //         });
+
+    //         computePass.setPipeline(this.computePipeline);
+    //         // Read from current buffer, write to the other buffer
+    //         computePass.setBindGroup(0, this.computeBindGroups[this.bufferIndex]);
+
+    //         // Dispatch compute shader
+    //         const workgroupSize = 64;
+    //         const numWorkgroups = Math.ceil(this.config.numParticles / workgroupSize);
+
+    //         // DEBUG: Log workgroup info periodically
+    //         if (this.frameCount === 1 || this.frameCount % this.debugInterval === 0) {
+    //             console.log(`Using compute bind group ${this.bufferIndex} (read from buffer ${this.bufferIndex}, write to buffer ${1 - this.bufferIndex})`);
+    //             console.log(`Dispatching ${numWorkgroups} workgroups for ${this.config.numParticles} particles`);
+    //         }
+
+    //         computePass.dispatchWorkgroups(numWorkgroups);
+    //         computePass.end();
+
+    //         // IMPORTANT: Flip buffer index AFTER compute pass completes
+    //         this.bufferIndex = 1 - this.bufferIndex;
+
+    //         // Render pass - draw particles
+    //         const renderPass = commandEncoder.beginRenderPass({
+    //             label: 'render-pass',
+    //             colorAttachments: [
+    //                 {
+    //                     view: textureView,
+    //                     clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
+    //                     loadOp: 'clear',
+    //                     storeOp: 'store'
+    //                 }
+    //             ]
+    //         });
+
+    //         renderPass.setPipeline(this.renderPipeline);
+    //         // Render from the buffer that was just updated
+    //         renderPass.setBindGroup(0, this.renderBindGroups[this.bufferIndex]);
+
+    //         // Draw particles using instancing
+    //         renderPass.draw(6, this.config.numParticles);
+    //         renderPass.end();
+
+    //         // Submit commands
+    //         device.queue.submit([commandEncoder.finish()]);
+
+    //         // DEBUG: Log buffer state after operations
+    //         if (this.frameCount === 1 || this.frameCount % this.debugInterval === 0) {
+    //             console.log(`After flip - Now rendering from buffer index: ${this.bufferIndex}`);
+    //             console.log("---");
+    //         }
+    //     } catch (error) {
+    //         console.error("Error in render:", error);
+    //         // Stop the simulation on error to prevent error spam
+    //         this.stop();
+    //         WebGPUUtils.showError(`Rendering error: ${error.message}`);
+    //     }
+    // }
+// }

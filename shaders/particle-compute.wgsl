@@ -67,7 +67,17 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 
     // Apply central force toward origin
     let toCenter = -pos;
-    force += toCenter * params.centralForce;
+    let distanceToCenter = length(toCenter);
+    
+    // Only apply central force if particle is not already at center
+    if (distanceToCenter > 0.001) {
+        let centerDirection = toCenter / distanceToCenter;
+        
+        // Scale force by distance (stronger when farther from center)
+        // And make it much weaker overall
+        let centralForceStrength = params.centralForce * 0.0000000001;
+        force += centerDirection * centralForceStrength;
+    }
 
     // Integrate velocity
     var newVel = vel + force * params.dt;

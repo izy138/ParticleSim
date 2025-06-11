@@ -1,0 +1,217 @@
+{
+    "particleCount": 12000,
+    "species": [
+      {
+        "color": [
+          0.4111726356661854,
+          0.9832457550635251,
+          0.09554786399721854,
+          1
+        ],
+        "forces": [
+          {
+            "strength": 48.12534966669923,
+            "collisionStrength": 350.14279416566984,
+            "radius": 19.14976142264962,
+            "collisionRadius": 7.968543089485224
+          },
+          {
+            "strength": 71.93857643472113,
+            "collisionStrength": 399.4881404347363,
+            "radius": 23.60911963811723,
+            "collisionRadius": 5.169445150834444
+          },
+          {
+            "strength": -81.26894563078267,
+            "collisionStrength": 558.3626121848279,
+            "radius": 16.02141773575572,
+            "collisionRadius": 2.632712991779423
+          },
+          {
+            "strength": 79.63350953061322,
+            "collisionStrength": 933.7580269283654,
+            "radius": 21.592419801446887,
+            "collisionRadius": 9.593916424007109
+          },
+          {
+            "strength": 51.21453506462236,
+            "collisionStrength": 452.2519241250858,
+            "radius": 9.35710828922749,
+            "collisionRadius": 3.5641678138297164
+          }
+        ],
+        "spawnWeight": 0.246769519024575
+      },
+      {
+        "color": [
+          0.6534343840255751,
+          0.1816017594442911,
+          0.18836848055850872,
+          1
+        ],
+        "forces": [
+          {
+            "strength": -58.88849937047853,
+            "collisionStrength": 943.0386195309586,
+            "radius": 12.33774191366025,
+            "collisionRadius": 5.601000949566255
+          },
+          {
+            "strength": 94.33892395897432,
+            "collisionStrength": 1448.0503519381216,
+            "radius": 27.019035108347396,
+            "collisionRadius": 9.526142714035158
+          },
+          {
+            "strength": -28.944245791545843,
+            "collisionStrength": 522.0628680437605,
+            "radius": 30.216531192266004,
+            "collisionRadius": 6.8172230360976895
+          },
+          {
+            "strength": 73.13377993621624,
+            "collisionStrength": 1242.1174234815821,
+            "radius": 9.509604748786227,
+            "collisionRadius": 2.101015166293791
+          },
+          {
+            "strength": 82.42208919395209,
+            "collisionStrength": 1356.7677568637637,
+            "radius": 2.5301114928032877,
+            "collisionRadius": 0.4325390714369354
+          }
+        ],
+        "spawnWeight": 0.27641762316296536
+      },
+      {
+        "color": [
+          0.12699962857192937,
+          0.8759699002617076,
+          0.6986000805396708,
+          1
+        ],
+        "forces": [
+          {
+            "strength": 70.52252054425524,
+            "collisionStrength": 1309.7494069196512,
+            "radius": 20.14345027948807,
+            "collisionRadius": 8.126931334405983
+          },
+          {
+            "strength": -96.06305049260493,
+            "collisionStrength": 961.8752936495299,
+            "radius": 10.225959190215757,
+            "collisionRadius": 0.4576461752438263
+          },
+          {
+            "strength": 93.56087204759235,
+            "collisionStrength": 1143.24411172941,
+            "radius": 14.934285110070936,
+            "collisionRadius": 5.414952049756761
+          },
+          {
+            "strength": 38.91764256913886,
+            "collisionStrength": 282.2947513588665,
+            "radius": 30.63843446616522,
+            "collisionRadius": 4.2106524382862505
+          },
+          {
+            "strength": -56.86663571896068,
+            "collisionStrength": 979.1366980608335,
+            "radius": 31.744291632930413,
+            "collisionRadius": 4.32235890486026
+          }
+        ],
+        "spawnWeight": 0.056592787665253
+      },
+      {
+        "color": [
+          0.25990421054527807,
+          0.28430755693232856,
+          0.7922498022354112,
+          1
+        ],
+        "forces": [
+          {
+            "strength": 95.0488635627829,
+            "collisionStrength": 1447.2273516365635,
+            "radius": 29.76782730442736,
+            "collisionRadius": 0.990747064002856
+          },
+          {
+            "strength": -99.71154640584218,
+            "collisionStrength": 798.579912108473,
+            "radius": 10.849000133692218,
+            "collisionRadius": 1.1889187432144614
+          },
+          {
+            "strength": -87.866711420378,
+            "collisionStrength": 930.0020333410979,
+            "radius": 28.808634264851058,
+            "collisionRadius": 3.7532511576261416
+          },
+          {
+            "strength": -63.418738357345006,
+            "collisionStrength": 978.474256225635,
+            "radius": 3.918356282104278,
+            "collisionRadius": 1.1143987339117984
+          },
+          {
+            "strength": -68.85287534996966,
+            "collisionStrength": 945.3628951479286,
+            "radius": 22.333890869223257,
+            "collisionRadius": 8.759423656207895
+          }
+        ],
+        "spawnWeight": 0.06275873880453553
+      },
+      {
+        "color": [
+          0.6810591837678288,
+          0.5103544684546653,
+          0.6050479881974009,
+          1
+        ],
+        "forces": [
+          {
+            "strength": -40.18091129394838,
+            "collisionStrength": 598.4370620833288,
+            "radius": 14.772759392976917,
+            "collisionRadius": 3.817673422067794
+          },
+          {
+            "strength": -76.35543597502131,
+            "collisionStrength": 851.8452245654626,
+            "radius": 25.192575736176014,
+            "collisionRadius": 3.4958606008711115
+          },
+          {
+            "strength": 39.7877218416314,
+            "collisionStrength": 733.1591698270819,
+            "radius": 20.350040457043306,
+            "collisionRadius": 8.559934938788329
+          },
+          {
+            "strength": -47.48775685562143,
+            "collisionStrength": 666.380540253983,
+            "radius": 8.955229857688849,
+            "collisionRadius": 3.581364959075392
+          },
+          {
+            "strength": 67.38849940722368,
+            "collisionStrength": 595.6863997014945,
+            "radius": 21.180590678990868,
+            "collisionRadius": 8.660101666311242
+          }
+        ],
+        "spawnWeight": 0.10265927423486854
+      }
+    ],
+    "simulationSize": [
+      900,
+      750
+    ],
+    "friction": "50",
+    "centralForce": 0,
+    "symmetricForces": false
+  }
