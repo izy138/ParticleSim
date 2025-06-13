@@ -10,215 +10,465 @@
             margin: 0;
             font-family: Arial, sans-serif;
             background-color: #f0f0f0;
+            overflow-x: auto;
         }
 
-        .container {
+        .main-container {
+            display: flex;
+            min-height: 100vh;
+            gap: 15px;
+            padding: 15px;
+            box-sizing: border-box;
+        }
+
+        /* Left Panel - Configuration */
+        .left-panel {
+            width: 280px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            max-height: calc(100vh - 30px);
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        /* Center Panel - Simulation */
+        .center-panel {
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 20px;
+            flex-grow: 1;
+            max-width: 950px;
         }
 
-        h1 {
+        .simulation-title {
+            margin: 0 0 15px 0;
             color: #333;
+            text-align: center;
+            font-size: 24px;
         }
 
         .canvas-container {
-            margin: 20px 0;
-            position: relative;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 15px rgba(0, 0, 0, 0.2);
+            padding: 10px;
         }
 
         canvas {
-            border: 1px solid #333;
+            border: 2px solid #333;
             background-color: #000;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
             display: block;
         }
 
-        .controls {
-            display: flex;
-            gap: 10px;
-            margin-top: 20px;
-            flex-wrap: wrap;
-            justify-content: center;
+        /* Right Panel - Controls */
+        .right-panel {
+            width: 280px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 15px;
+            max-height: calc(100vh - 30px);
+            overflow-y: auto;
+            flex-shrink: 0;
         }
 
-        .control-group {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin: 0 10px;
+        /* Panel Section Headers */
+        .panel-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
         }
 
-        .control-group label {
-            margin-bottom: 5px;
-            font-weight: bold;
+        .panel-section h3 {
+            margin: 0 0 15px 0;
+            color: #333;
+            font-size: 16px;
+            text-align: center;
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 8px;
         }
 
+        /* Buttons */
         button {
-            padding: 8px 16px;
+            width: 100%;
+            padding: 10px;
             border: none;
-            border-radius: 4px;
-            background-color: #4CAF50;
+            border-radius: 6px;
             color: white;
             cursor: pointer;
-            font-size: 16px;
-            transition: background-color 0.3s;
-            margin: 5px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            margin-bottom: 8px;
         }
 
         button:hover {
-            background-color: #45a049;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
         }
 
         button:disabled {
-            background-color: #ccc;
+            background-color: #ccc !important;
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
 
-        #pause-btn {
-            background-color: #FF9800;
+        /* Button Colors */
+        .start-btn {
+            background-color: #28a745;
         }
 
-        #pause-btn:hover {
-            background-color: #F57C00;
+        .start-btn:hover {
+            background-color: #218838;
         }
 
-        #pause-btn.paused {
-            background-color: #4CAF50;
+        .pause-btn {
+            background-color: #fd7e14;
         }
 
-        #pause-btn.paused:hover {
-            background-color: #45a049;
+        .pause-btn:hover {
+            background-color: #e55a00;
         }
 
-        #stop-btn {
-            background-color: #f44336;
+        .pause-btn.paused {
+            background-color: #28a745;
         }
 
-        #stop-btn:hover {
-            background-color: #d32f2f;
+        .pause-btn.paused:hover {
+            background-color: #218838;
         }
 
-        #reset-btn {
-            background-color: #2196F3;
+        .stop-btn {
+            background-color: #dc3545;
         }
 
-        #reset-btn:hover {
-            background-color: #0b7dda;
+        .stop-btn:hover {
+            background-color: #c82333;
         }
 
-        #randomize-btn {
-            background-color: #FF9800;
+        .reset-btn {
+            background-color: #007bff;
         }
 
-        #randomize-btn:hover {
-            background-color: #F57C00;
+        .reset-btn:hover {
+            background-color: #0056b3;
         }
 
-        .generation-controls {
-            background-color: #f9f9f9;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 20px;
-            border: 1px solid #ddd;
+        .generate-btn {
+            background-color: #28a745;
         }
 
-        .generation-controls h3 {
-            margin-top: 0;
-            color: #333;
+        .generate-btn:hover {
+            background-color: #218838;
         }
 
-        .themed-buttons {
-            display: flex;
-            gap: 5px;
-            flex-wrap: wrap;
-            margin-top: 10px;
+        .randomize-btn {
+            background-color: #fd7e14;
         }
 
-        .themed-buttons button {
-            background-color: #9C27B0;
-            font-size: 14px;
-            padding: 6px 12px;
+        .randomize-btn:hover {
+            background-color: #e55a00;
         }
 
-        .themed-buttons button:hover {
-            background-color: #7B1FA2;
+        .new-config-btn {
+            background-color: #6f42c1;
+        }
+
+        .new-config-btn:hover {
+            background-color: #5a32a3;
+        }
+
+        .save-btn {
+            background-color: #20c997;
+        }
+
+        .save-btn:hover {
+            background-color: #1aa085;
+        }
+
+        .copy-btn {
+            background-color: #17a2b8;
+        }
+
+        .copy-btn:hover {
+            background-color: #138496;
+        }
+
+        .default-btn {
+            background-color: #fd7e14;
+        }
+
+        .default-btn:hover {
+            background-color: #e55a00;
+        }
+
+        .auto-save-btn {
+            background-color: #6c757d;
+        }
+
+        .auto-save-btn:hover {
+            background-color: #545b62;
+        }
+
+        /* Control Groups */
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #495057;
+            font-size: 13px;
         }
 
         input[type="range"] {
-            width: 150px;
-            margin: 5px 0;
+            width: 100%;
+            margin: 8px 0;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 6px;
+            border-radius: 3px;
+            background: #dee2e6;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #007bff;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #007bff;
+            cursor: pointer;
+            border: none;
         }
 
         .slider-value {
-            color: #666;
+            display: block;
+            text-align: center;
+            color: #007bff;
+            font-weight: 600;
             font-size: 14px;
+            margin-top: 5px;
+        }
+
+        /* Info Boxes */
+        .keyboard-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        .config-status {
+            background: #e7f3ff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            border: 1px solid #bee5eb;
+        }
+
+        #config-display {
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 11px;
+            color: #333;
+            line-height: 1.3;
+        }
+
+        .save-info {
+            background: #e8f5e8;
+            padding: 8px;
+            border-radius: 4px;
+            margin: 8px 0;
+            font-size: 11px;
+            color: #155724;
+            line-height: 1.2;
+        }
+
+        /* Animation styles for notifications */
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        /* Responsive Design */
+        @media (max-width: 1400px) {
+
+            .left-panel,
+            .right-panel {
+                width: 250px;
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .main-container {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .left-panel,
+            .right-panel {
+                width: 100%;
+                max-width: 900px;
+                max-height: none;
+                margin-bottom: 15px;
+            }
+
+            .center-panel {
+                order: -1;
+            }
+        }
+
+        /* Compact mode for smaller sections */
+        .compact-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 5px;
+            margin: 10px 0;
+        }
+
+        .compact-buttons button {
+            margin-bottom: 0;
+            padding: 8px;
+            font-size: 12px;
         }
     </style>
 </head>
 
 <body>
-    <div class="container">
-        <h1>Particle Life Simulator</h1>
-        <div class="canvas-container">
-            <canvas id="webgpu-canvas" width="800" height="600"></canvas>
-        </div>
+    <div class="main-container">
+        <!-- Left Panel - Configuration Generation -->
+        <div class="left-panel">
+            <div class="panel-section">
+                <h3>🌋 Configuration Generator</h3>
 
-        <div class="controls">
-            <button id="start-btn">Start</button>
-            <button id="pause-btn">Pause</button> <!-- NEW: Pause button -->
-            <button id="stop-btn">Stop</button>
-            <button id="reset-btn">Reset</button>
-        </div>
+                <div class="keyboard-info">
+                    <strong>Shortcuts:</strong><br>
+                    <strong>SPACE</strong> - Randomize Forces<br>
+                    <strong>G</strong> - New Config<br>
+                    <strong>N</strong> - Complete New<br>
+                    <strong>P</strong> - Pause/Resume<br>
+                    <strong>R</strong> - Reset
+                </div>
 
-        <div class="generation-controls">
-            <!-- <h3>Generate Themed Simulations (12K particles)</h3>
-            <div class="themed-buttons">
-                <button id="vibrant-chaos-btn">Vibrant Chaos</button>
-                <button id="organic-growth-btn">Organic Growth</button>
-                <button id="competing-clusters-btn">Competing Clusters</button>
-                <button id="spiral-dynamics-btn">Spiral Dynamics</button>
-                <button id="stable-orbits-btn">Stable Orbits</button>
-            </div> -->
-        </div>
+                <button id="generate-btn" class="generate-btn">Generate New Config</button>
+                <button id="randomize-btn" class="randomize-btn">Randomize Forces</button>
+                <button id="new-config-btn" class="new-config-btn">New Complete Config</button>
 
-        <div class="controls">
-            <div class="control-group">
-                <label>Friction:</label>
-                <input type="range" id="friction-slider" min="1" max="200" value="50">
-                <span class="slider-value" id="friction-value">50</span>
+                <div class="config-status">
+                    <div id="config-display">Ready to generate...</div>
+                </div>
             </div>
 
-            <!-- <div class="control-group">
-                <label>Central Force:</label>
-                <input type="range" id="central-slider" min="-0.1" max="0.1" step="0.01" value="0">
-                <span class="slider-value" id="central-value">0</span>
-            </div> -->
+            <div class="panel-section">
+                <h3>💾 Save Configuration</h3>
 
-            <div class="control-group">
-                <label>Force Scale:</label>
-                <input type="range" id="force-scale-slider" min="0.1" max="5" step="0.1" value="1">
-                <span class="slider-value" id="force-scale-value">1</span>
+                <div class="compact-buttons">
+                    <button id="save-config-btn" class="save-btn">Save</button>
+                    <button id="copy-config-btn" class="copy-btn">Copy</button>
+                </div>
+
+                <div class="save-info">
+                    <strong>Save:</strong> Ctrl+S<br>
+                    <strong>Copy:</strong> Ctrl+Shift+C<br>
+                    Replace particle-life-system.json with saved files!
+                </div>
+            </div>
+        </div>
+
+        <!-- Center Panel - Simulation -->
+        <div class="center-panel">
+            <h1 class="simulation-title">Particle Life Simulator</h1>
+            <div class="canvas-container">
+                <canvas id="webgpu-canvas" width="900" height="750"></canvas>
+            </div>
+        </div>
+
+        <!-- Right Panel - Controls -->
+        <div class="right-panel">
+            <div class="panel-section">
+                <h3>🎮 Simulation Controls</h3>
+
+                <button id="start-btn" class="start-btn">Start Simulation</button>
+                <button id="pause-btn" class="pause-btn">Pause</button>
+                <button id="stop-btn" class="stop-btn">Stop</button>
+                <button id="reset-btn" class="reset-btn">Reset</button>
             </div>
 
-            <div class="control-group">
-                <label>Particle Size:</label>
-                <input type="range" id="particle-size-slider" min="0.005" max="0.05" step="0.001" value="0.007">
-                <span class="slider-value" id="particle-size-value">0.007</span>
+            <div class="panel-section">
+                <h3>⚙️ Parameters</h3>
+
+                <div class="control-group">
+                    <label>Friction:</label>
+                    <input type="range" id="friction-slider" min="1" max="200" value="50">
+                    <span class="slider-value" id="friction-value">50</span>
+                </div>
+
+                <div class="control-group">
+                    <label>Force Scale:</label>
+                    <input type="range" id="force-scale-slider" min="0.1" max="5" step="0.1" value="1">
+                    <span class="slider-value" id="force-scale-value">1.0</span>
+                </div>
             </div>
 
-            <div class="control-group">
-                <label>Particle Opacity:</label>
-                <input type="range" id="particle-opacity-slider" min="0.1" max="1" step="0.05" value="0.75">
-                <span class="slider-value" id="particle-opacity-value">0.75</span>
+            <div class="panel-section">
+                <h3>🎨 Visual Settings</h3>
+
+                <div class="control-group">
+                    <label>Particle Size:</label>
+                    <input type="range" id="particle-size-slider" min="0.002" max="0.013" step="0.001" value="0.007">
+                    <span class="slider-value" id="particle-size-value">0.007</span>
+                </div>
+
+                <div class="control-group">
+                    <label>Particle Opacity:</label>
+                    <input type="range" id="particle-opacity-slider" min="0.1" max="1" step="0.05" value="0.75">
+                    <span class="slider-value" id="particle-opacity-value">0.75</span>
+                </div>
             </div>
         </div>
     </div>
 
     <!-- Load scripts in the correct order -->
     <script src="webgpu-utils.js"></script>
-    <!-- <script src="simulation-generator.js"></script> -->
     <script src="particle-life-simulator.js"></script>
     <script src="main.js"></script>
 </body>
