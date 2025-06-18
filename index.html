@@ -9,7 +9,7 @@
         body {
             margin: 0;
             font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
+            background-color: #1e1f37;
             overflow-x: auto;
         }
 
@@ -24,7 +24,7 @@
         /* Left Panel - Configuration */
         .left-panel {
             width: 280px;
-            background: white;
+            background: #1e1f37;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             padding: 15px;
@@ -44,13 +44,13 @@
 
         .simulation-title {
             margin: 0 0 15px 0;
-            color: #333;
+            color: #898bbf;
             text-align: center;
             font-size: 24px;
         }
 
         .canvas-container {
-            background: white;
+            background: #2c2e4e;
             border-radius: 10px;
             box-shadow: 0 2px 15px rgba(0, 0, 0, 0.2);
             padding: 10px;
@@ -66,7 +66,7 @@
         /* Right Panel - Controls */
         .right-panel {
             width: 280px;
-            background: white;
+            background: #1e1f37;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             padding: 15px;
@@ -80,13 +80,13 @@
             margin-bottom: 20px;
             padding: 15px;
             border-radius: 8px;
-            background: #f8f9fa;
+            background: #313253;
             border-left: 4px solid #007bff;
         }
 
         .panel-section h3 {
             margin: 0 0 15px 0;
-            color: #333;
+            color: #b1baf7;
             font-size: 16px;
             text-align: center;
             border-bottom: 1px solid #dee2e6;
@@ -113,7 +113,7 @@
         }
 
         button:disabled {
-            background-color: #ccc !important;
+            background-color: #7d7d7d !important;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
@@ -225,7 +225,7 @@
             display: block;
             margin-bottom: 5px;
             font-weight: 600;
-            color: #495057;
+            color: #b2b3e7;
             font-size: 13px;
         }
 
@@ -246,7 +246,7 @@
             width: 18px;
             height: 18px;
             border-radius: 50%;
-            background: #007bff;
+            background: #4b6bcd;
             cursor: pointer;
         }
 
@@ -254,7 +254,7 @@
             width: 18px;
             height: 18px;
             border-radius: 50%;
-            background: #007bff;
+            background: #7a97b5;
             cursor: pointer;
             border: none;
         }
@@ -262,10 +262,18 @@
         .slider-value {
             display: block;
             text-align: center;
-            color: #007bff;
+            color: #9dbcdd;
             font-weight: 600;
             font-size: 14px;
             margin-top: 5px;
+        }
+
+        /* Add this to your CSS */
+        .slider-value.changed {
+            background-color: #28a745;
+            color: white;
+            border-radius: 4px;
+            padding: 2px 6px;
         }
 
         /* Info Boxes */
@@ -389,9 +397,8 @@
                     <strong>R</strong> - Reset
                 </div>
 
-                <button id="generate-btn" class="generate-btn">Generate New Config</button>
                 <button id="randomize-btn" class="randomize-btn">Randomize Forces</button>
-                <button id="new-config-btn" class="new-config-btn">New Complete Config</button>
+                <button id="new-config-btn" class="new-config-btn">Generate New</button>
 
                 <div class="config-status">
                     <div id="config-display">Ready to generate...</div>
@@ -418,21 +425,55 @@
         <div class="center-panel">
             <h1 class="simulation-title">Particle Life Simulator</h1>
             <div class="canvas-container">
-                <canvas id="webgpu-canvas" width="900" height="750"></canvas>
+                <canvas id="webgpu-canvas" width="910" height="760"></canvas>
             </div>
         </div>
 
         <!-- Right Panel - Controls -->
         <div class="right-panel">
+            <!-- Add this to your simulation controls section in index.html -->
             <div class="panel-section">
                 <h3>🎮 Simulation Controls</h3>
 
                 <button id="start-btn" class="start-btn">Start Simulation</button>
                 <button id="pause-btn" class="pause-btn">Pause</button>
                 <button id="stop-btn" class="stop-btn">Stop</button>
-                <button id="reset-btn" class="reset-btn">Reset</button>
-            </div>
 
+                <!-- Split reset into two buttons -->
+                <button id="reset-btn" class="reset-btn">Reset + New Forces</button>
+                <button id="reset-to-original-btn" class="default-btn">Reset to Original Forces</button>
+                <button id="reset-positions-btn" class="reset-btn">Reset Positions Only</button>
+            </div>
+            <!-- Add this to your right panel in index.html -->
+            <div class="panel-section">
+                <h3>🎛️ Force Generation Parameters</h3>
+
+                <div class="control-group">
+                    <label>Strength Range Modifier:</label>
+                    <input type="range" id="strength-modifier-slider" min="50" max="150" value="110" step="5">
+                    <span class="slider-value" id="strength-modifier-value">110</span>
+                </div>
+
+                <div class="control-group">
+                    <label>Radius Range:</label>
+                    <input type="range" id="radius-range-slider" min="10" max="50" value="25" step="1">
+                    <span class="slider-value" id="radius-range-value">25</span>
+                </div>
+
+                <div class="control-group">
+                    <label>Collision Strength Range:</label>
+                    <input type="range" id="collision-strength-range-slider" min="300" max="1200" value="750" step="25">
+                    <span class="slider-value" id="collision-strength-range-value">750</span>
+                </div>
+
+                <div class="control-group">
+                    <label>Collision Radius Range:</label>
+                    <input type="range" id="collision-radius-range-slider" min="1" max="8" value="4" step="0.2">
+                    <span class="slider-value" id="collision-radius-range-value">4</span>
+                </div>
+
+                <button id="reset-force-params-btn" class="default-btn">Reset to Defaults</button>
+            </div>
             <div class="panel-section">
                 <h3>⚙️ Parameters</h3>
 
@@ -463,7 +504,9 @@
                     <input type="range" id="particle-opacity-slider" min="0.1" max="1" step="0.05" value="0.75">
                     <span class="slider-value" id="particle-opacity-value">0.75</span>
                 </div>
+
             </div>
+
         </div>
     </div>
 

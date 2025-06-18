@@ -9,7 +9,7 @@ class ParticleLifeSimulator {
         // Load configuration from particle-life-system.json by default
         this.config = Object.assign({
             numParticles: 1000,
-            numTypes: 3,
+            numTypes: 6,
             particleSize: 0.007,  // NEW: Base particle size (relative to world space)
             particleOpacity: 0.75  // NEW: Particle opacity (0-1)
         }, config);
@@ -70,49 +70,54 @@ class ParticleLifeSimulator {
             return false;
         }
     }
-
     async loadConfiguration() {
-    try {
-        const response = await fetch('particle-life-system.json');
-        if (!response.ok) {
-            console.log("No particle-life-system.json found, using default configuration");
+        // Only load from JSON if we don't already have a species configuration
+        if (this.config.species && this.config.species.length > 0) {
+            console.log("Using provided configuration, skipping JSON load");
+            // We already have a config, just set up what we need
+            this.config.numParticles = this.config.particleCount || this.config.numParticles;
+            this.config.numTypes = this.config.species.length;
+            this.config.colors = this.config.species.map(species => species.color);
+            this.config.attractionMatrix = this.extractAttractionMatrix(this.config.species);
             return;
         }
 
-        const config = await response.json();
+        // Only load from JSON if no species provided
+        try {
+            const response = await fetch('particle-life-system.json');
+            if (!response.ok) {
+                console.log("No particle-life-system.json found, using default configuration");
+                return;
+            }
 
-        // Override configuration with loaded values
-        this.config.numParticles = config.particleCount;
-        this.config.numTypes = config.species.length;
-        this.config.simulationSize = config.simulationSize;
-        
-        // FIXED: Parse friction as number, not string
-        this.config.friction = parseFloat(config.friction) || 50.0;
-        
-        this.config.centralForce = config.centralForce || 0;
-        this.config.symmetricForces = config.symmetricForces || false;
-        this.config.species = config.species;
+            const config = await response.json();
+            console.log("Loading configuration from JSON file");
 
-        // Load particle size and opacity if present
-        if (config.particleSize !== undefined) {
-            this.config.particleSize = config.particleSize;
+            // Override configuration with loaded values
+            this.config.numParticles = config.particleCount;
+            this.config.numTypes = config.species.length;
+            this.config.simulationSize = config.simulationSize;
+            this.config.friction = parseFloat(config.friction) || 50.0;
+            this.config.centralForce = config.centralForce || 0;
+            this.config.symmetricForces = config.symmetricForces || false;
+            this.config.species = config.species;
+
+            if (config.particleSize !== undefined) {
+                this.config.particleSize = config.particleSize;
+            }
+            if (config.particleOpacity !== undefined) {
+                this.config.particleOpacity = config.particleOpacity;
+            }
+
+            this.config.colors = config.species.map(species => species.color);
+            this.config.attractionMatrix = this.extractAttractionMatrix(config.species);
+
+            console.log("Loaded configuration from particle-life-system.json");
+        } catch (error) {
+            console.warn("Could not load particle-life-system.json:", error.message);
+            this.config.friction = 50.0;
         }
-        if (config.particleOpacity !== undefined) {
-            this.config.particleOpacity = config.particleOpacity;
-        }
-
-        // Extract colors and force matrices from species
-        this.config.colors = config.species.map(species => species.color);
-        this.config.attractionMatrix = this.extractAttractionMatrix(config.species);
-
-        console.log("Loaded configuration from particle-life-system.json");
-        console.log("Friction value from JSON:", this.config.friction);
-    } catch (error) {
-        console.warn("Could not load particle-life-system.json:", error.message);
-        // Set default friction if loading fails
-        this.config.friction = 50.0;
     }
-}
 
     extractAttractionMatrix(species) {
         const numTypes = species.length;
@@ -195,14 +200,14 @@ class ParticleLifeSimulator {
             particleData[baseIndex + 4] = Math.floor(Math.random() * numTypes);
         }
 
-        // DEBUG: Log first few particles
-        console.log("First particle:", {
-            x: particleData[0],
-            y: particleData[1],
-            vx: particleData[2],
-            vy: particleData[3],
-            type: particleData[4]
-        });
+        // // DEBUG: Log first few particles
+        // console.log("First particle:", {
+        //     x: particleData[0],
+        //     y: particleData[1],
+        //     vx: particleData[2],
+        //     vy: particleData[3],
+        //     type: particleData[4]
+        // });
 
         // Create particle buffers (double buffering)
         // FIXED: Add CopySrc usage for debugging
@@ -231,8 +236,8 @@ class ParticleLifeSimulator {
 
         // Create uniform buffer for simulation parameters
         // Use the proper dt value from config
-        const frictionHalfLife = this.config.friction * 0.001; // Convert JSON value to seconds
-        const dt = 0.002; // Time step
+        const frictionHalfLife = this.config.friction * 0.0009; // Convert JSON value to seconds
+        const dt = 0.0025; // Time step
         const friction = Math.exp(-Math.log(2) * dt / frictionHalfLife);
 
         const uniformData = new Float32Array([
@@ -815,396 +820,566 @@ class ParticleLifeSimulator {
             WebGPUUtils.showError(`Rendering error: ${error.message}`);
         }
     }
-    
+
     // NEW: Method to dynamically update force matrices without restarting
-async updateForceMatrices(newConfig) {
-    if (!this.gpu || !this.gpu.device) {
-        throw new Error("GPU not initialized");
+    async updateForceMatrices(newConfig) {
+        if (!this.gpu || !this.gpu.device) {
+            throw new Error("GPU not initialized");
+        }
+
+        const device = this.gpu.device;
+        const numTypes = newConfig.species.length;
+
+        // Check if we need to change the number of types
+        if (numTypes !== this.config.numTypes) {
+            throw new Error("Cannot change number of types dynamically - requires restart");
+        }
+
+        // Extract new force matrices using your existing scaling factors
+        const strengthMatrix = [];
+        const radiusMatrix = [];
+        const collisionStrengthMatrix = [];
+        const collisionRadiusMatrix = [];
+
+        for (let i = 0; i < numTypes; i++) {
+            for (let j = 0; j < numTypes; j++) {
+                const force = newConfig.species[i].forces[j];
+                strengthMatrix.push(force.strength / 200.0);
+                radiusMatrix.push(force.radius / 130);
+                collisionStrengthMatrix.push(force.collisionStrength / 30.0);
+                collisionRadiusMatrix.push(force.collisionRadius / 275.0);
+            }
+        }
+
+        // Update GPU buffers
+        device.queue.writeBuffer(
+            this.strengthBuffer,
+            0,
+            new Float32Array(strengthMatrix)
+        );
+
+        device.queue.writeBuffer(
+            this.radiusBuffer,
+            0,
+            new Float32Array(radiusMatrix)
+        );
+
+        device.queue.writeBuffer(
+            this.collisionStrengthBuffer,
+            0,
+            new Float32Array(collisionStrengthMatrix)
+        );
+
+        device.queue.writeBuffer(
+            this.collisionRadiusBuffer,
+            0,
+            new Float32Array(collisionRadiusMatrix)
+        );
+
+        // Update colors
+        const colorData = new Float32Array(numTypes * 4);
+        for (let i = 0; i < numTypes; i++) {
+            for (let j = 0; j < 4; j++) {
+                colorData[i * 4 + j] = newConfig.species[i].color[j];
+            }
+        }
+
+        device.queue.writeBuffer(this.colorBuffer, 0, colorData);
+
+        // Update local config
+        this.config.species = newConfig.species;
+        this.config.colors = newConfig.species.map(s => s.color);
+        this.config.strengthMatrix = strengthMatrix;
+        this.config.radiusMatrix = radiusMatrix;
+        this.config.collisionStrengthMatrix = collisionStrengthMatrix;
+        this.config.collisionRadiusMatrix = collisionRadiusMatrix;
+
+        console.log("Force matrices updated dynamically!");
     }
 
-    const device = this.gpu.device;
-    const numTypes = newConfig.species.length;
+    // NEW: Method to update particle count dynamically
+    async updateParticleCount(newCount) {
+        if (!this.gpu || !this.gpu.device) {
+            throw new Error("GPU not initialized");
+        }
 
-    // Check if we need to change the number of types
-    if (numTypes !== this.config.numTypes) {
-        throw new Error("Cannot change number of types dynamically - requires restart");
+        if (newCount === this.config.numParticles) {
+            return; // No change needed
+        }
+
+        const device = this.gpu.device;
+        const numTypes = this.config.numTypes;
+
+        // Create new particle data
+        const particleData = new Float32Array(newCount * 5);
+        for (let i = 0; i < newCount; i++) {
+            const baseIndex = i * 5;
+            particleData[baseIndex] = Math.random() * 2 - 1;     // x
+            particleData[baseIndex + 1] = Math.random() * 2 - 1; // y
+            particleData[baseIndex + 2] = (Math.random() - 0.5) * 0.1; // vx
+            particleData[baseIndex + 3] = (Math.random() - 0.5) * 0.1; // vy
+            particleData[baseIndex + 4] = Math.floor(Math.random() * numTypes); // type
+        }
+
+        // Destroy old buffers
+        this.particleBuffers.forEach(buffer => buffer.destroy());
+
+        // Create new particle buffers
+        const bufferSize = particleData.byteLength;
+        this.particleBuffers = [
+            device.createBuffer({
+                size: bufferSize,
+                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
+                mappedAtCreation: true
+            }),
+            device.createBuffer({
+                size: bufferSize,
+                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
+                mappedAtCreation: true
+            })
+        ];
+
+        // Initialize both buffers with the same data
+        new Float32Array(this.particleBuffers[0].getMappedRange()).set(particleData);
+        this.particleBuffers[0].unmap();
+        new Float32Array(this.particleBuffers[1].getMappedRange()).set(particleData);
+        this.particleBuffers[1].unmap();
+
+        // Update config
+        this.config.numParticles = newCount;
+
+        // Recreate bind groups with new buffers
+        this.createBindGroups();
+
+        console.log(`Particle count updated to ${newCount}`);
     }
 
-    // Extract new force matrices using your existing scaling factors
-    const strengthMatrix = [];
-    const radiusMatrix = [];
-    const collisionStrengthMatrix = [];
-    const collisionRadiusMatrix = [];
+    // NEW: Method to apply a complete new configuration
+    async applyNewConfiguration(newConfig) {
+        try {
+            console.log("Applying new configuration...");
 
-    for (let i = 0; i < numTypes; i++) {
-        for (let j = 0; j < numTypes; j++) {
-            const force = newConfig.species[i].forces[j];
-            strengthMatrix.push(force.strength / 200.0);
-            radiusMatrix.push(force.radius / 130);
-            collisionStrengthMatrix.push(force.collisionStrength / 30.0);
-            collisionRadiusMatrix.push(force.collisionRadius / 275.0);
+            // Update particle count if changed
+            if (newConfig.particleCount !== this.config.numParticles) {
+                await this.updateParticleCount(newConfig.particleCount);
+            }
+
+            // Update force matrices
+            await this.updateForceMatrices(newConfig);
+
+            // Update other properties
+            this.config.friction = parseFloat(newConfig.friction);
+            this.config.centralForce = newConfig.centralForce;
+
+            // Update uniform buffer with new friction
+            const dt = 0.002;
+            const frictionHalfLife = this.config.friction * 0.001;
+            const friction = Math.exp(-Math.log(2) * dt / frictionHalfLife);
+
+            const uniformData = new Float32Array([
+                0.02,   // radius
+                0.15,   // rMax
+                dt,     // dt
+                friction, // friction
+                this.config.centralForce || 0.0, // central force
+                this.config.numTypes || 3        // numTypes
+            ]);
+
+            this.gpu.device.queue.writeBuffer(this.uniformBuffer, 0, uniformData);
+
+            console.log("New configuration applied successfully!");
+            return true;
+        } catch (error) {
+            console.error("Error applying new configuration:", error);
+            throw error;
         }
     }
 
-    // Update GPU buffers
-    device.queue.writeBuffer(
-        this.strengthBuffer,
-        0,
-        new Float32Array(strengthMatrix)
-    );
+    // Update the existing reset method in particle-life-simulator.js
+    reset(newConfig = null) {
+        console.log("Resetting simulation with current forces...");
+        const wasRunning = this.isRunning;
+        const wasPaused = this.isPaused;
 
-    device.queue.writeBuffer(
-        this.radiusBuffer,
-        0,
-        new Float32Array(radiusMatrix)
-    );
+        this.stop();
+        this.bufferIndex = 0;
 
-    device.queue.writeBuffer(
-        this.collisionStrengthBuffer,
-        0,
-        new Float32Array(collisionStrengthMatrix)
-    );
+        if (newConfig) {
+            // Apply new configuration during reset
+            this.config = Object.assign(this.config, {
+                numParticles: newConfig.particleCount,
+                numTypes: newConfig.species?.length || this.config.numTypes,
+                species: newConfig.species,
+                friction: parseFloat(newConfig.friction),
+                centralForce: newConfig.centralForce,
+                colors: newConfig.species?.map(s => s.color) || this.config.colors
+            });
+        }
 
-    device.queue.writeBuffer(
-        this.collisionRadiusBuffer,
-        0,
-        new Float32Array(collisionRadiusMatrix)
-    );
+        // Reinitialize particles with current config (including current forces)
+        this.initializeParticles();
+        this.createBindGroups();
 
-    // Update colors
-    const colorData = new Float32Array(numTypes * 4);
-    for (let i = 0; i < numTypes; i++) {
-        for (let j = 0; j < 4; j++) {
-            colorData[i * 4 + j] = newConfig.species[i].color[j];
+        if (wasRunning) {
+            this.start();
+            if (wasPaused) {
+                this.pause();
+            }
         }
     }
 
-    device.queue.writeBuffer(this.colorBuffer, 0, colorData);
-
-    // Update local config
-    this.config.species = newConfig.species;
-    this.config.colors = newConfig.species.map(s => s.color);
-    this.config.strengthMatrix = strengthMatrix;
-    this.config.radiusMatrix = radiusMatrix;
-    this.config.collisionStrengthMatrix = collisionStrengthMatrix;
-    this.config.collisionRadiusMatrix = collisionRadiusMatrix;
-
-    console.log("Force matrices updated dynamically!");
-}
-
-// NEW: Method to update particle count dynamically
-async updateParticleCount(newCount) {
-    if (!this.gpu || !this.gpu.device) {
-        throw new Error("GPU not initialized");
-    }
-
-    if (newCount === this.config.numParticles) {
-        return; // No change needed
-    }
-
-    const device = this.gpu.device;
-    const numTypes = this.config.numTypes;
-
-    // Create new particle data
-    const particleData = new Float32Array(newCount * 5);
-    for (let i = 0; i < newCount; i++) {
-        const baseIndex = i * 5;
-        particleData[baseIndex] = Math.random() * 2 - 1;     // x
-        particleData[baseIndex + 1] = Math.random() * 2 - 1; // y
-        particleData[baseIndex + 2] = (Math.random() - 0.5) * 0.1; // vx
-        particleData[baseIndex + 3] = (Math.random() - 0.5) * 0.1; // vy
-        particleData[baseIndex + 4] = Math.floor(Math.random() * numTypes); // type
-    }
-
-    // Destroy old buffers
-    this.particleBuffers.forEach(buffer => buffer.destroy());
-
-    // Create new particle buffers
-    const bufferSize = particleData.byteLength;
-    this.particleBuffers = [
-        device.createBuffer({
-            size: bufferSize,
-            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
-            mappedAtCreation: true
-        }),
-        device.createBuffer({
-            size: bufferSize,
-            usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
-            mappedAtCreation: true
-        })
-    ];
-
-    // Initialize both buffers with the same data
-    new Float32Array(this.particleBuffers[0].getMappedRange()).set(particleData);
-    this.particleBuffers[0].unmap();
-    new Float32Array(this.particleBuffers[1].getMappedRange()).set(particleData);
-    this.particleBuffers[1].unmap();
-
-    // Update config
-    this.config.numParticles = newCount;
-
-    // Recreate bind groups with new buffers
-    this.createBindGroups();
-
-    console.log(`Particle count updated to ${newCount}`);
-}
-
-// NEW: Method to apply a complete new configuration
-async applyNewConfiguration(newConfig) {
-    try {
-        console.log("Applying new configuration...");
-
-        // Update particle count if changed
-        if (newConfig.particleCount !== this.config.numParticles) {
-            await this.updateParticleCount(newConfig.particleCount);
+    // Update the existing randomizeForces method to automatically store as baseline
+    async randomizeForces(params = null) {
+        if (!this.config.species) {
+            console.warn("No species configuration available for randomization");
+            return;
         }
 
-        // Update force matrices
+        // Use provided parameters or get from global forceParams
+        const forceParams = params || window.forceParams || {
+            strengthModifier: 110,
+            radiusRange: 25,
+            collisionStrengthRange: 750,
+            collisionRadiusRange: 4
+        };
+
+        console.log('randomizeForces called with params:', forceParams);
+
+        const numTypes = this.config.numTypes;
+        const newSpecies = [...this.config.species];
+
+        // Randomize forces for each species using the slider parameters
+        for (let i = 0; i < numTypes; i++) {
+            for (let j = 0; j < numTypes; j++) {
+                const strength = (Math.random() * 200 - forceParams.strengthModifier);
+                const radius = 5 + Math.random() * forceParams.radiusRange;
+                const collisionStrength = 200 + Math.random() * forceParams.collisionStrengthRange;
+                const collisionRadius = 0.5 + Math.random() * forceParams.collisionRadiusRange;
+
+                newSpecies[i].forces[j] = {
+                    strength,
+                    radius,
+                    collisionStrength,
+                    collisionRadius
+                };
+            }
+        }
+
+        const newConfig = {
+            particleCount: this.config.numParticles,
+            species: newSpecies,
+            friction: this.config.friction,
+            centralForce: this.config.centralForce,
+            symmetricForces: false
+        };
+
         await this.updateForceMatrices(newConfig);
 
-        // Update other properties
-        this.config.friction = parseFloat(newConfig.friction);
-        this.config.centralForce = newConfig.centralForce;
+        // Automatically store the new randomized forces as baseline
+        this.storeCurrentAsBaseline();
 
-        // Update uniform buffer with new friction
-        const dt = 0.002;
-        const frictionHalfLife = this.config.friction * 0.001;
-        const friction = Math.exp(-Math.log(2) * dt / frictionHalfLife);
-
-        const uniformData = new Float32Array([
-            0.02,   // radius
-            0.15,   // rMax
-            dt,     // dt
-            friction, // friction
-            this.config.centralForce || 0.0, // central force
-            this.config.numTypes || 3        // numTypes
-        ]);
-
-        this.gpu.device.queue.writeBuffer(this.uniformBuffer, 0, uniformData);
-
-        console.log("New configuration applied successfully!");
-        return true;
-    } catch (error) {
-        console.error("Error applying new configuration:", error);
-        throw error;
+        console.log("Forces randomized and set as new baseline:", forceParams);
     }
-}
 
-// ENHANCED: Enhanced reset method that can take a new configuration
-reset(newConfig = null) {
-    console.log("Resetting simulation...");
-    const wasRunning = this.isRunning;
-    this.stop();
-    this.bufferIndex = 0;
 
-    if (newConfig) {
-        // Apply new configuration during reset
-        this.config = Object.assign(this.config, {
-            numParticles: newConfig.particleCount,
-            numTypes: newConfig.species?.length || this.config.numTypes,
-            species: newConfig.species,
-            friction: parseFloat(newConfig.friction),
-            centralForce: newConfig.centralForce,
-            colors: newConfig.species?.map(s => s.color) || this.config.colors
+    // ALTERNATIVE: Method that uses stored baseline instead of current forces
+    async resetWithModifiedBaseline(forceParams) {
+        console.log("=== RESET WITH MODIFIED BASELINE ===");
+        console.log("Using force parameters:", forceParams);
+
+        const wasRunning = this.isRunning;
+        const wasPaused = this.isPaused;
+
+        // Stop the simulation
+        this.stop();
+        this.bufferIndex = 0;
+
+        // Use stored baseline if available, otherwise use current
+        const sourceForces = this.baselineForces || this.config.species;
+
+        if (!sourceForces) {
+            console.error("No forces available to modify!");
+            return;
+        }
+
+        console.log("Using baseline forces for modification");
+        console.log("Baseline sample:", sourceForces[0].forces[0]);
+
+        const numTypes = this.config.numTypes;
+
+        // Calculate scaling factors
+        const defaults = {
+            strengthModifier: 110,
+            radiusRange: 25,
+            collisionStrengthRange: 750,
+            collisionRadiusRange: 4
+        };
+
+        const strengthScale = forceParams.strengthModifier / defaults.strengthModifier;
+        const radiusScale = forceParams.radiusRange / defaults.radiusRange;
+        const collisionStrengthScale = forceParams.collisionStrengthRange / defaults.collisionStrengthRange;
+        const collisionRadiusScale = forceParams.collisionRadiusRange / defaults.collisionRadiusRange;
+
+        console.log("Scaling factors:", {
+            strength: strengthScale,
+            radius: radiusScale,
+            collisionStrength: collisionStrengthScale,
+            collisionRadius: collisionRadiusScale
         });
+
+        // Create modified version of baseline forces
+        const modifiedSpecies = JSON.parse(JSON.stringify(sourceForces));
+
+        // Apply scaling to all forces
+        for (let i = 0; i < numTypes; i++) {
+            for (let j = 0; j < numTypes; j++) {
+                const baselineForce = sourceForces[i].forces[j];
+
+                modifiedSpecies[i].forces[j] = {
+                    strength: baselineForce.strength * strengthScale,
+                    radius: baselineForce.radius * radiusScale,
+                    collisionStrength: baselineForce.collisionStrength * collisionStrengthScale,
+                    collisionRadius: baselineForce.collisionRadius * collisionRadiusScale
+                };
+            }
+        }
+
+        // Update the config with modified forces
+        this.config.species = modifiedSpecies;
+        console.log("Forces modified from baseline, result:", modifiedSpecies[0].forces[0]);
+
+        // Reinitialize everything with modified forces
+        console.log("Reinitializing particles and buffers...");
+        this.initializeParticles();
+        this.createBindGroups();
+
+        // Restart if it was running
+        if (wasRunning) {
+            this.start();
+            if (wasPaused) {
+                this.pause();
+            }
+        }
+
+        console.log("Reset with modified baseline complete!");
     }
 
-    // Reinitialize particles with current config
-    this.initializeParticles();
-    this.createBindGroups();
 
-    if (wasRunning) {
-        this.start();
-    }
-}
-
-// NEW: Quick method to randomize just the forces (keeping same particle count/types)
-async randomizeForces() {
-    if (!this.config.species) {
-        console.warn("No species configuration available for randomization");
-        return;
-    }
-
-    const numTypes = this.config.numTypes;
-    const newSpecies = [...this.config.species];
-
-    // Randomize forces for each species
-    for (let i = 0; i < numTypes; i++) {
-        for (let j = 0; j < numTypes; j++) {
-            const strength = (Math.random() * 200 - 100);
-            const radius = 5 + Math.random() * 35;
-            const collisionStrength = 200 + Math.random() * 800;
-            const collisionRadius = 0.5 + Math.random() * 5;
-
-            newSpecies[i].forces[j] = {
-                strength,
-                radius,
-                collisionStrength,
-                collisionRadius
-            };
+    // Also add this method to reset to original forces
+    resetToOriginalForces() {
+        if (this.originalForces) {
+            console.log("Restoring original forces...");
+            this.config.species = JSON.parse(JSON.stringify(this.originalForces));
+            this.initializeParticles();
+            this.createBindGroups();
+            console.log("Original forces restored!");
+        } else {
+            console.log("No original forces stored to restore");
         }
     }
 
-    const newConfig = {
-        particleCount: this.config.numParticles,
-        species: newSpecies,
-        friction: this.config.friction,
-        centralForce: this.config.centralForce,
-        symmetricForces: false
-    };
+    // Add this method to your ParticleLifeSimulator class in particle-life-simulator.js
+    storeCurrentAsBaseline() {
+        if (this.config.species) {
+            console.log("Storing current configuration as baseline for modifications...");
+            this.baselineForces = JSON.parse(JSON.stringify(this.config.species));
+            console.log("Baseline stored, sample:", this.baselineForces[0].forces[0]);
+        }
+    }
+    // Also add this helper method for the "Reset Positions Only" button
+    resetPositionsOnly() {
+        console.log("Resetting particle positions only...");
+        const wasRunning = this.isRunning;
+        const wasPaused = this.isPaused;
 
-    await this.updateForceMatrices(newConfig);
-    console.log("Forces randomized!");
-    
+        this.stop();
+        this.bufferIndex = 0;
+
+        // Only reinitialize particle positions, not the force matrices
+        this.initializeParticlePositions();
+        this.createBindGroups();
+
+        if (wasRunning) {
+            this.start();
+            if (wasPaused) {
+                this.pause();
+            }
+        }
+    }
+
+    // And this helper method to only reinitialize positions
+    initializeParticlePositions() {
+        const { device } = this.gpu;
+        const { numParticles, numTypes } = this.config;
+
+        // Create new particle data with random positions
+        const particleData = new Float32Array(numParticles * 5);
+
+        for (let i = 0; i < numParticles; i++) {
+            const baseIndex = i * 5;
+            // Random position in normalized device coordinates [-1, 1]
+            particleData[baseIndex] = Math.random() * 2 - 1;     // x
+            particleData[baseIndex + 1] = Math.random() * 2 - 1; // y
+            // Small initial velocities
+            particleData[baseIndex + 2] = (Math.random() - 0.5) * 0.1; // vx
+            particleData[baseIndex + 3] = (Math.random() - 0.5) * 0.1; // vy
+            particleData[baseIndex + 4] = Math.floor(Math.random() * numTypes); // type
+        }
+
+        // Update both particle buffers with new positions
+        device.queue.writeBuffer(this.particleBuffers[0], 0, particleData);
+        device.queue.writeBuffer(this.particleBuffers[1], 0, particleData);
+
+        console.log("Particle positions reset");
+    }
 }
-}
 
 
-    // start() {
-    //     if (this.isRunning) return;
+// start() {
+//     if (this.isRunning) return;
 
-    //     console.log("Starting simulation...");
-    //     this.isRunning = true;
-    //     console.log("Starting with buffer index:", this.bufferIndex);
-    //     this.frameId = requestAnimationFrame(this.update.bind(this));
-    // }
+//     console.log("Starting simulation...");
+//     this.isRunning = true;
+//     console.log("Starting with buffer index:", this.bufferIndex);
+//     this.frameId = requestAnimationFrame(this.update.bind(this));
+// }
 
-    //  // NEW: Pause method
-    // pause() {
-    //     if (!this.isRunning) return;
+//  // NEW: Pause method
+// pause() {
+//     if (!this.isRunning) return;
 
-    //     this.isPaused = true;
-    //     console.log("Simulation paused");
-    // }
+//     this.isPaused = true;
+//     console.log("Simulation paused");
+// }
 
-    //    // NEW: Unpause method
-    // unpause() {
-    //     if (!this.isRunning || !this.isPaused) return;
+//    // NEW: Unpause method
+// unpause() {
+//     if (!this.isRunning || !this.isPaused) return;
 
-    //     this.isPaused = false;
-    //     console.log("Simulation unpaused");
-    //     // No need to restart the loop - update() will continue automatically
-    // }
+//     this.isPaused = false;
+//     console.log("Simulation unpaused");
+//     // No need to restart the loop - update() will continue automatically
+// }
 
-    // stop() {
-    //     if (!this.isRunning) return;
+// stop() {
+//     if (!this.isRunning) return;
 
-    //     console.log("Stopping simulation...");
-    //     this.isRunning = false;
-    //     if (this.frameId) {
-    //         cancelAnimationFrame(this.frameId);
-    //         this.frameId = null;
-    //     }
-    // }
+//     console.log("Stopping simulation...");
+//     this.isRunning = false;
+//     if (this.frameId) {
+//         cancelAnimationFrame(this.frameId);
+//         this.frameId = null;
+//     }
+// }
 
 
-    // reset() {
-    //     console.log("Resetting simulation...");
-    //     this.stop();
-    //     this.bufferIndex = 0; // Reset buffer index on explicit reset
-    //     this.initializeParticles();
-    //     this.createBindGroups();
-    //     this.start();
-    // }
+// reset() {
+//     console.log("Resetting simulation...");
+//     this.stop();
+//     this.bufferIndex = 0; // Reset buffer index on explicit reset
+//     this.initializeParticles();
+//     this.createBindGroups();
+//     this.start();
+// }
 
-    // update() {
-    //     if (!this.isRunning) return;
+// update() {
+//     if (!this.isRunning) return;
 
-    //     try {
-    //         this.render();
-    //         this.frameId = requestAnimationFrame(this.update.bind(this));
-    //     } catch (error) {
-    //         console.error("Error in update loop:", error);
-    //         this.stop();
-    //         WebGPUUtils.showError(`Simulation error: ${error.message}`);
-    //     }
-    // }
+//     try {
+//         this.render();
+//         this.frameId = requestAnimationFrame(this.update.bind(this));
+//     } catch (error) {
+//         console.error("Error in update loop:", error);
+//         this.stop();
+//         WebGPUUtils.showError(`Simulation error: ${error.message}`);
+//     }
+// }
 
-    // render() {
-    //     if (!this.gpu || !this.gpu.device || !this.gpu.context) {
-    //         console.error("GPU context is invalid");
-    //         return;
-    //     }
+// render() {
+//     if (!this.gpu || !this.gpu.device || !this.gpu.context) {
+//         console.error("GPU context is invalid");
+//         return;
+//     }
 
-    //     const { device, context } = this.gpu;
+//     const { device, context } = this.gpu;
 
-    //     try {
-    //         // Increment frame counter first
-    //         this.frameCount++;
+//     try {
+//         // Increment frame counter first
+//         this.frameCount++;
 
-    //         // DEBUG: Log frame info periodically
-    //         if (this.frameCount === 1 || this.frameCount % this.debugInterval === 0) {
-    //             console.log(`Frame ${this.frameCount} - Starting with buffer index: ${this.bufferIndex}`);
-    //         }
+//         // DEBUG: Log frame info periodically
+//         if (this.frameCount === 1 || this.frameCount % this.debugInterval === 0) {
+//             console.log(`Frame ${this.frameCount} - Starting with buffer index: ${this.bufferIndex}`);
+//         }
 
-    //         // CRITICAL FIX: Get fresh texture each frame
-    //         // This prevents the device association errors
-    //         const currentTexture = context.getCurrentTexture();
-    //         const textureView = currentTexture.createView();
+//         // CRITICAL FIX: Get fresh texture each frame
+//         // This prevents the device association errors
+//         const currentTexture = context.getCurrentTexture();
+//         const textureView = currentTexture.createView();
 
-    //         // Create command encoder for this frame
-    //         const commandEncoder = device.createCommandEncoder({
-    //             label: 'frame-command-encoder'
-    //         });
+//         // Create command encoder for this frame
+//         const commandEncoder = device.createCommandEncoder({
+//             label: 'frame-command-encoder'
+//         });
 
-    //         // Compute pass - process particles
-    //         const computePass = commandEncoder.beginComputePass({
-    //             label: 'compute-pass'
-    //         });
+//         // Compute pass - process particles
+//         const computePass = commandEncoder.beginComputePass({
+//             label: 'compute-pass'
+//         });
 
-    //         computePass.setPipeline(this.computePipeline);
-    //         // Read from current buffer, write to the other buffer
-    //         computePass.setBindGroup(0, this.computeBindGroups[this.bufferIndex]);
+//         computePass.setPipeline(this.computePipeline);
+//         // Read from current buffer, write to the other buffer
+//         computePass.setBindGroup(0, this.computeBindGroups[this.bufferIndex]);
 
-    //         // Dispatch compute shader
-    //         const workgroupSize = 64;
-    //         const numWorkgroups = Math.ceil(this.config.numParticles / workgroupSize);
+//         // Dispatch compute shader
+//         const workgroupSize = 64;
+//         const numWorkgroups = Math.ceil(this.config.numParticles / workgroupSize);
 
-    //         // DEBUG: Log workgroup info periodically
-    //         if (this.frameCount === 1 || this.frameCount % this.debugInterval === 0) {
-    //             console.log(`Using compute bind group ${this.bufferIndex} (read from buffer ${this.bufferIndex}, write to buffer ${1 - this.bufferIndex})`);
-    //             console.log(`Dispatching ${numWorkgroups} workgroups for ${this.config.numParticles} particles`);
-    //         }
+//         // DEBUG: Log workgroup info periodically
+//         if (this.frameCount === 1 || this.frameCount % this.debugInterval === 0) {
+//             console.log(`Using compute bind group ${this.bufferIndex} (read from buffer ${this.bufferIndex}, write to buffer ${1 - this.bufferIndex})`);
+//             console.log(`Dispatching ${numWorkgroups} workgroups for ${this.config.numParticles} particles`);
+//         }
 
-    //         computePass.dispatchWorkgroups(numWorkgroups);
-    //         computePass.end();
+//         computePass.dispatchWorkgroups(numWorkgroups);
+//         computePass.end();
 
-    //         // IMPORTANT: Flip buffer index AFTER compute pass completes
-    //         this.bufferIndex = 1 - this.bufferIndex;
+//         // IMPORTANT: Flip buffer index AFTER compute pass completes
+//         this.bufferIndex = 1 - this.bufferIndex;
 
-    //         // Render pass - draw particles
-    //         const renderPass = commandEncoder.beginRenderPass({
-    //             label: 'render-pass',
-    //             colorAttachments: [
-    //                 {
-    //                     view: textureView,
-    //                     clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
-    //                     loadOp: 'clear',
-    //                     storeOp: 'store'
-    //                 }
-    //             ]
-    //         });
+//         // Render pass - draw particles
+//         const renderPass = commandEncoder.beginRenderPass({
+//             label: 'render-pass',
+//             colorAttachments: [
+//                 {
+//                     view: textureView,
+//                     clearValue: { r: 0.0, g: 0.0, b: 0.0, a: 1.0 },
+//                     loadOp: 'clear',
+//                     storeOp: 'store'
+//                 }
+//             ]
+//         });
 
-    //         renderPass.setPipeline(this.renderPipeline);
-    //         // Render from the buffer that was just updated
-    //         renderPass.setBindGroup(0, this.renderBindGroups[this.bufferIndex]);
+//         renderPass.setPipeline(this.renderPipeline);
+//         // Render from the buffer that was just updated
+//         renderPass.setBindGroup(0, this.renderBindGroups[this.bufferIndex]);
 
-    //         // Draw particles using instancing
-    //         renderPass.draw(6, this.config.numParticles);
-    //         renderPass.end();
+//         // Draw particles using instancing
+//         renderPass.draw(6, this.config.numParticles);
+//         renderPass.end();
 
-    //         // Submit commands
-    //         device.queue.submit([commandEncoder.finish()]);
+//         // Submit commands
+//         device.queue.submit([commandEncoder.finish()]);
 
-    //         // DEBUG: Log buffer state after operations
-    //         if (this.frameCount === 1 || this.frameCount % this.debugInterval === 0) {
-    //             console.log(`After flip - Now rendering from buffer index: ${this.bufferIndex}`);
-    //             console.log("---");
-    //         }
-    //     } catch (error) {
-    //         console.error("Error in render:", error);
-    //         // Stop the simulation on error to prevent error spam
-    //         this.stop();
-    //         WebGPUUtils.showError(`Rendering error: ${error.message}`);
-    //     }
-    // }
+//         // DEBUG: Log buffer state after operations
+//         if (this.frameCount === 1 || this.frameCount % this.debugInterval === 0) {
+//             console.log(`After flip - Now rendering from buffer index: ${this.bufferIndex}`);
+//             console.log("---");
+//         }
+//     } catch (error) {
+//         console.error("Error in render:", error);
+//         // Stop the simulation on error to prevent error spam
+//         this.stop();
+//         WebGPUUtils.showError(`Rendering error: ${error.message}`);
+//     }
+// }
