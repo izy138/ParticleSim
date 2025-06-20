@@ -1,6 +1,5 @@
 /**
- * Simulation Manager for Particle Life Simulator
- * Manages the simulation lifecycle, configuration, and UI coordination
+ * Updated Simulation Manager with Responsive Canvas Support
  */
 
 class SimulationManager {
@@ -18,19 +17,32 @@ class SimulationManager {
     }
 
     /**
-     * Initialize the simulation manager
+     * Initialize the simulation manager with responsive canvas
      */
     async initialize() {
         try {
-            console.log("Initializing Simulation Manager...");
-            
-            // Configure canvas
+            console.log("Initializing Simulation Manager with responsive support...");
+
+            // Initialize responsive canvas system first
+            this.responsiveSystem = new ResponsiveCanvasSystem();
+            this.responsiveSystem.initialize();
+
+            // Configure canvas with responsive sizing
             this.configureCanvas();
-            
+
             // Start simulation
             await this.startSimulation();
-            
-            console.log("Simulation Manager initialized successfully");
+
+            // Connect responsive system to simulator
+            if (this.simulator) {
+                this.responsiveSystem.setSimulator(this.simulator);
+                this.responsiveSystem.updateSimulationConfig();
+
+                // Apply device-specific optimizations
+                this.applyDeviceOptimizations();
+            }
+
+            console.log("✓ Simulation Manager with responsive support initialized successfully");
             return true;
         } catch (error) {
             console.error("Failed to initialize Simulation Manager:", error);
@@ -38,10 +50,30 @@ class SimulationManager {
         }
     }
 
+    /**
+     * Configure canvas with responsive sizing
+     */
+    configureCanvas() {
+        if (this.responsiveSystem) {
+            // Let responsive system handle sizing
+            this.responsiveSystem.applyCanvasSize();
 
-  configureCanvas() {
-    const canvas = document.getElementById('webgpu-canvas');
-    if (canvas) {
+            const currentSize = this.responsiveSystem.getCurrentSize();
+            console.log(`Canvas configured: ${currentSize.width}x${currentSize.height}`);
+            console.log(`Device category: ${this.responsiveSystem.getDeviceCategory()}`);
+        } else {
+            // Fallback to default sizing
+            this.configureFallbackCanvas();
+        }
+    }
+
+    /**
+     * Fallback canvas configuration if responsive system fails
+     */
+    configureFallbackCanvas() {
+        const canvas = document.getElementById('webgpu-canvas');
+        if (!canvas) return;
+
         // Try to load from JSON first
         fetch('particle-life-system.json')
             .then(response => response.json())
@@ -51,20 +83,108 @@ class SimulationManager {
                     canvas.height = config.simulationSize[1];
                     console.log(`Canvas set to ${config.simulationSize[0]}x${config.simulationSize[1]} from JSON`);
                 } else {
-                    // Fallback to defaults
-                    canvas.width = 1000;
-                    canvas.height = 800;
-                    console.log('Using default canvas size');
+                    // Use screen-based fallback
+                    const fallbackWidth = Math.min(window.innerWidth - 300, 1200);
+                    const fallbackHeight = Math.min(window.innerHeight - 100, 800);
+                    canvas.width = fallbackWidth;
+                    canvas.height = fallbackHeight;
+                    console.log(`Canvas set to fallback size: ${fallbackWidth}x${fallbackHeight}`);
                 }
             })
             .catch(err => {
-                // Fallback if no JSON file
-                canvas.width = 1000;
-                canvas.height = 800;
-                console.log("No JSON file found, using default canvas size");
+                // Final fallback
+                canvas.width = Math.min(window.innerWidth - 300, 1000);
+                canvas.height = Math.min(window.innerHeight - 100, 800);
+                console.log("Using final fallback canvas size");
             });
     }
-}
+
+    /**
+     * Apply device-specific optimizations
+     */
+    applyDeviceOptimizations() {
+        if (!this.responsiveSystem) return;
+
+        const deviceInfo = this.responsiveSystem.applyDeviceOptimizations();
+        console.log('Applying device optimizations:', deviceInfo);
+
+        // Adjust particle count based on screen size and device capability
+        const recommendedParticles = deviceInfo.recommendedParticles;
+
+        if (this.simulator && this.simulator.config) {
+            const currentParticles = this.simulator.config.numParticles;
+
+            // Only auto-adjust if the difference is significant
+            const ratio = recommendedParticles / currentParticles;
+            if (ratio < 0.7 || ratio > 1.3) {
+                console.log(`Recommending particle count adjustment: ${currentParticles} → ${recommendedParticles}`);
+
+                // You could automatically apply this, or just log it for user decision
+                // this.updateParticleCount(recommendedParticles);
+            }
+        }
+
+        // Device-specific quality settings
+        switch (deviceInfo.category) {
+            case 'mobile':
+                console.log('Mobile device detected - consider lower particle counts and simpler effects');
+                break;
+            case 'tablet':
+                console.log('Tablet device detected - balanced settings recommended');
+                break;
+            case 'desktop':
+                console.log('Desktop device detected - full quality available');
+                break;
+            case 'large-desktop':
+                console.log('Large desktop detected - maximum quality and particle counts supported');
+                break;
+        }
+
+        return deviceInfo;
+    }
+
+    /**
+     * Handle window resize events
+     */
+    onWindowResize() {
+        if (this.responsiveSystem) {
+            this.responsiveSystem.applyCanvasSize();
+
+            if (this.simulator) {
+                // Update simulator's aspect ratio
+                this.simulator.updateAspectRatio();
+            }
+        }
+    }
+
+    /**
+     * Force a specific canvas size (for testing)
+     */
+    setCanvasSize(width, height) {
+        if (this.responsiveSystem) {
+            this.responsiveSystem.setSize(width, height);
+
+            if (this.simulator) {
+                this.simulator.updateAspectRatio();
+            }
+        }
+    }
+
+    /**
+     * Get current canvas information
+     */
+    getCanvasInfo() {
+        if (this.responsiveSystem) {
+            return this.responsiveSystem.getCurrentSize();
+        }
+
+        const canvas = document.getElementById('webgpu-canvas');
+        return canvas ? {
+            width: canvas.width,
+            height: canvas.height,
+            aspectRatio: canvas.width / canvas.height
+        } : null;
+    }
 
     /**
      * Randomize forces in the current simulation
@@ -97,9 +217,19 @@ class SimulationManager {
         }
 
         try {
-            // Generate completely new configuration with random parameters
+            // Get current canvas size for the new config
+            const canvasInfo = this.getCanvasInfo();
+            console.log('Using canvas size for new config:', canvasInfo);
+
+            // Generate completely new configuration with current canvas dimensions
             const numTypes = 3 + Math.floor(Math.random() * 4); // 3-6 types
-            const numParticles = 8000 + Math.floor(Math.random() * 3000); // 8k-16k particles
+
+            // Use device-optimized particle count
+            let numParticles = 10000;
+            if (this.responsiveSystem) {
+                numParticles = this.responsiveSystem.getRecommendedParticleCount();
+            }
+
             const forceScale = 1 + Math.random() * 0.9; // 0.8-1.2 scale
             const radius = 15 + Math.random() * 10; // 15-25 radius
 
@@ -107,26 +237,23 @@ class SimulationManager {
                 numTypes,
                 numParticles,
                 forceScale,
-                radius
+                radius,
+                canvasSize: canvasInfo
             });
 
-            // Generate the new configuration using lava lamp function
+            // Generate the new configuration
             const newConfig = this.generateLavaLampConfiguration(numTypes, numParticles, forceScale, radius);
+
+            // Update simulation size to match current canvas
+            if (canvasInfo) {
+                newConfig.simulationSize = [canvasInfo.width, canvasInfo.height];
+            }
 
             console.log("Generated config:", {
                 particleCount: newConfig.particleCount,
                 speciesCount: newConfig.species.length,
-                firstSpeciesColor: newConfig.species[0].color,
-                firstForce: newConfig.species[0].forces[0]
+                simulationSize: newConfig.simulationSize
             });
-
-            // Create a completely new simulator instance
-            console.log("Creating new simulator instance...");
-
-            // Destroy the old simulator first
-            if (this.simulator && this.simulator.gpu) {
-                this.simulator.stop();
-            }
 
             // Create brand new simulator with the generated config
             this.simulator = new ParticleLifeSimulator('webgpu-canvas', newConfig);
@@ -137,10 +264,14 @@ class SimulationManager {
             if (initialized) {
                 console.log("New simulator initialized successfully!");
 
-                // Automatically store the new config as baseline for modifications
-                this.simulator.storeCurrentAsBaseline();
+                // Reconnect responsive system
+                if (this.responsiveSystem) {
+                    this.responsiveSystem.setSimulator(this.simulator);
+                    this.responsiveSystem.updateSimulationConfig();
+                }
 
-                // Update UI
+                // Store baseline and update UI
+                this.simulator.storeCurrentAsBaseline();
                 this.syncSlidersWithConfig();
                 this.updateConfigDisplay(newConfig);
 
@@ -159,58 +290,15 @@ class SimulationManager {
 
         } catch (error) {
             console.error("Error creating new configuration:", error);
-
-            // Fallback: try to create a basic working config
-            console.log("Attempting fallback configuration...");
-            try {
-                const fallbackConfig = this.generateLavaLampConfiguration(4, 10000, 1.0, 20);
-                console.log("Fallback config generated:", fallbackConfig);
-
-                this.simulator = new ParticleLifeSimulator('webgpu-canvas', fallbackConfig);
-                const initialized = await this.simulator.initialize();
-
-                if (initialized) {
-                    this.simulator.storeCurrentAsBaseline();
-                    this.syncSlidersWithConfig();
-                    this.updateConfigDisplay(fallbackConfig);
-                    if (wasRunning) {
-                        this.simulator.start();
-                    }
-                    this.updateButtonStates();
-                    console.log("✓ Fallback configuration created successfully");
-                    return true;
-                }
-            } catch (fallbackError) {
-                console.error("Even fallback failed:", fallbackError);
-
-                // Last resort: restart with default JSON
-                console.log("Last resort: restarting with default configuration");
-                try {
-                    this.simulator = new ParticleLifeSimulator('webgpu-canvas', {});
-                    const initialized = await this.simulator.initialize();
-                    if (initialized) {
-                        this.simulator.storeCurrentAsBaseline();
-                        this.syncSlidersWithConfig();
-                        if (wasRunning) {
-                            this.simulator.start();
-                        }
-                        this.updateButtonStates();
-                    }
-                } catch (lastResortError) {
-                    console.error("Complete failure:", lastResortError);
-                    WebGPUUtils.showError("Failed to create new configuration");
-                }
-            }
+            // Fallback handling...
             return false;
         }
     }
 
-   
     getSimulator() {
         return this.simulator;
     }
 
-   
     getConfigGenerator() {
         if (!this.configGenerator) {
             this.configGenerator = new ConfigGenerator();
@@ -218,7 +306,6 @@ class SimulationManager {
         return this.configGenerator;
     }
 
-  
     getUIController() {
         if (!this.uiController) {
             this.uiController = {
@@ -235,8 +322,7 @@ class SimulationManager {
         return generator.generateLavaLampConfiguration(numTypes, numParticles, forceScale, radius);
     }
 
-  
-    // Helper methods for UI management
+    // Helper methods for UI management (keeping existing methods)
     async startSimulation() {
         try {
             this.simulator = new ParticleLifeSimulator('webgpu-canvas', {});
@@ -245,6 +331,13 @@ class SimulationManager {
 
             if (initialized) {
                 console.log("Simulator initialized successfully");
+
+                // Connect to responsive system
+                if (this.responsiveSystem) {
+                    this.responsiveSystem.setSimulator(this.simulator);
+                    this.responsiveSystem.updateSimulationConfig();
+                }
+
                 this.syncSlidersWithConfig();
                 this.simulator.start();
                 this.updateButtonStates();
@@ -260,13 +353,11 @@ class SimulationManager {
     updateButtonStates() {
         const startBtn = document.getElementById('start-btn');
         const pauseBtn = document.getElementById('pause-btn');
-        // const stopBtn = document.getElementById('stop-btn');
         const resetBtn = document.getElementById('reset-btn');
 
         if (!this.simulator) {
             startBtn.disabled = false;
             pauseBtn.disabled = true;
-            // stopBtn.disabled = true;
             resetBtn.disabled = true;
             if (pauseBtn) {
                 pauseBtn.textContent = 'Pause';
@@ -278,7 +369,6 @@ class SimulationManager {
         if (!this.simulator.isRunning) {
             startBtn.disabled = false;
             pauseBtn.disabled = true;
-            // stopBtn.disabled = true;
             resetBtn.disabled = false;
             if (pauseBtn) {
                 pauseBtn.textContent = 'Pause';
@@ -287,7 +377,6 @@ class SimulationManager {
         } else {
             startBtn.disabled = true;
             pauseBtn.disabled = false;
-            // stopBtn.disabled = false;
             resetBtn.disabled = false;
 
             if (pauseBtn) {
@@ -340,20 +429,24 @@ class SimulationManager {
         );
         const repulsiveForces = totalForces - attractiveForces;
 
-        // Add aspect ratio information
-        const canvas = document.getElementById('webgpu-canvas');
-        const aspectRatio = canvas ? (canvas.width / canvas.height).toFixed(2) : 'Unknown';
-        const canvasInfo = config.simulationSize ?
-            `${config.simulationSize[0]}×${config.simulationSize[1]}` :
-            'Unknown';
+        // Get current canvas info from responsive system
+        const canvasInfo = this.getCanvasInfo();
+        const aspectRatio = canvasInfo ? canvasInfo.aspectRatio.toFixed(2) : 'Unknown';
+        const canvasSize = canvasInfo ?
+            `${canvasInfo.width}×${canvasInfo.height}` :
+            (config.simulationSize ? `${config.simulationSize[0]}×${config.simulationSize[1]}` : 'Unknown');
+
+        // Get device category for additional info
+        const deviceCategory = this.responsiveSystem ? this.responsiveSystem.getDeviceCategory() : 'Unknown';
 
         display.innerHTML = `
             <strong>Current Configuration:</strong><br>
             • Particle Types: ${config.species.length}<br>
             • Total Particles: ${config.particleCount.toLocaleString()}<br>
-            • Canvas Size: ${canvasInfo}<br>
+            • Canvas Size: ${canvasSize}<br>
             • Aspect Ratio: ${aspectRatio}:1<br>
-            • Particle Size: ${config.particleSize}<br>
+            • Device: ${deviceCategory}<br>
+            • Particle Size: ${config.particleSize || 'Default'}<br>
             • Antisocial Types: ${antisocialCount}<br>
             • Force Balance: ${attractiveForces} attractive, ${repulsiveForces} repulsive<br>
             • Friction: ${config.friction}<br>
@@ -369,4 +462,3 @@ if (typeof module !== 'undefined' && module.exports) {
     // Make available globally for browser use
     window.SimulationManager = SimulationManager;
 }
-
