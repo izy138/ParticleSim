@@ -1,4 +1,4 @@
-// Updated Particle Compute Shader with Asymmetric Forces, Collisions, Wall Bounce, Central Force
+// Updated Particle Compute Shader with Aspect Ratio Correction
 
 @group(0) @binding(0) var<storage, read> particlesIn: array<f32>;
 @group(0) @binding(1) var<storage, read_write> particlesOut: array<f32>;
@@ -9,7 +9,9 @@ struct Params {
     dt: f32,
     friction: f32,
     centralForce: f32,
-    numTypes: f32 // Pass as float; cast to uint in code
+    numTypes: f32,
+    aspectRatio: f32,    // NEW: Add aspect ratio to params
+    padding: f32,        // NEW: Padding for alignment
 };
 
 @group(0) @binding(2) var<uniform> params: Params;
@@ -42,10 +44,17 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         let pos_j = vec2<f32>(particlesIn[jBase], particlesIn[jBase + 1u]);
         let type_j = u32(particlesIn[jBase + 4u]);
 
-        let dx = pos_j.x - pos.x;
-        let dy = pos_j.y - pos.y;
+        // FIXED: Apply aspect ratio correction to distance calculation
+        var dx = pos_j.x - pos.x;
+        var dy = pos_j.y - pos.y;
+        
+        // Scale X distance by aspect ratio to maintain circular interaction areas
+        dx = dx * params.aspectRatio;
+        
         let dist2 = dx * dx + dy * dy;
         let dist = sqrt(dist2);
+        
+        // Direction vector (corrected for aspect ratio)
         let dir = vec2<f32>(dx, dy) / max(dist, 1e-5);
 
         let idx_ij = particleType * u32(params.numTypes) + type_j;
@@ -57,26 +66,35 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 
         if (dist < radius && radius > 0.0) {
             let f = strength * (1.0 - dist / radius);
-            force += f * dir;
+            var forceContrib = f * dir;
+            // FIXED: Scale force X component back by inverse aspect ratio
+            forceContrib.x = forceContrib.x / params.aspectRatio;
+            force += forceContrib;
         }
         if (dist < collRadius && collRadius > 0.0) {
             let repulse = collStrength * (1.0 - dist / collRadius);
-            force -= repulse * dir;
+            var repulseContrib = repulse * dir;
+            // FIXED: Scale repulsion X component back by inverse aspect ratio
+            repulseContrib.x = repulseContrib.x / params.aspectRatio;
+            force -= repulseContrib;
         }
     }
 
-    // Apply central force toward origin
+    // FIXED: Apply aspect ratio correction to central force
     let toCenter = -pos;
-    let distanceToCenter = length(toCenter);
+    let distanceToCenter = length(vec2<f32>(toCenter.x * params.aspectRatio, toCenter.y));
     
     // Only apply central force if particle is not already at center
     if (distanceToCenter > 0.001) {
-        let centerDirection = toCenter / distanceToCenter;
+        var centerDirection = toCenter / distanceToCenter;
+        centerDirection.x = centerDirection.x * params.aspectRatio;
         
         // Scale force by distance (stronger when farther from center)
         // And make it much weaker overall
-        let centralForceStrength = params.centralForce * 0.0000000001;
-        force += centerDirection * centralForceStrength;
+        let centralForceStrength = params.centralForce * 0.000001;
+        var centralForceContrib = centerDirection * centralForceStrength;
+        centralForceContrib.x = centralForceContrib.x / params.aspectRatio;
+        force += centralForceContrib;
     }
 
     // Integrate velocity
@@ -85,23 +103,24 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 
     var newPos = pos + newVel * params.dt;
     
-    // Wall bounds in simulation units (e.g., [-1, 1])
-    let bound = 1.0;
+    // FIXED: Apply aspect ratio correction to wall bounds
+    let boundX = 1.0;
+    let boundY = 1.0;
 
-    if (newPos.x < -bound) {
-        newPos.x = -bound;
+    if (newPos.x < -boundX) {
+        newPos.x = -boundX;
         newVel.x = -newVel.x;
     }
-    if (newPos.x > bound) {
-       newPos.x = bound;
+    if (newPos.x > boundX) {
+       newPos.x = boundX;
        newVel.x = -newVel.x;
     }
-    if (newPos.y < -bound) {
-       newPos.y = -bound;
+    if (newPos.y < -boundY) {
+       newPos.y = -boundY;
        newVel.y = -newVel.y;
     }
-    if (newPos.y > bound) {
-        newPos.y = bound;
+    if (newPos.y > boundY) {
+        newPos.y = boundY;
         newVel.y = -newVel.y;
     }
 
