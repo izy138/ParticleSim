@@ -412,7 +412,7 @@ class UIController {
 
                 resetBtn.textContent = '✓ Forces Modified!';
                 setTimeout(() => {
-                    resetBtn.textContent = 'Reset + Modify Forces';
+                    resetBtn.textContent = 'Update Forces';
                     resetBtn.disabled = false;
                 }, 1000);
 
@@ -420,7 +420,7 @@ class UIController {
                 console.error('Error during reset:', error);
                 resetBtn.textContent = '✗ Error';
                 setTimeout(() => {
-                    resetBtn.textContent = 'Reset + Modify Forces';
+                    resetBtn.textContent = 'Update Forces';
                     resetBtn.disabled = false;
                 }, 2000);
             }
@@ -494,7 +494,7 @@ class UIController {
                 await this.simulationManager.restartWithNewConfiguration();
                 newConfigBtn.textContent = '✓ New Config!';
                 setTimeout(() => {
-                    newConfigBtn.textContent = 'New Complete Config';
+                    newConfigBtn.textContent = 'Generate Random Sim';
                     newConfigBtn.disabled = false;
                 }, 1000);
             } catch (error) {
