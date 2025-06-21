@@ -5,10 +5,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>WebGPU Particle Life Simulator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,100..900;1,100..900&display=swap"
+        rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300..700&display=swap" rel="stylesheet">
     <style>
         body {
             margin: 0;
-            font-family: Arial, sans-serif;
+            font-family: 'Space Grotesk', sans-serif;
             background-color: #000000;
             /* overflow-x: auto; */
             overflow: hidden;
@@ -87,8 +94,11 @@
 
         /* Panel Section Headers - Compact */
         .panel-section {
-            margin-bottom: 16px;
-            padding: 10px;
+            margin-bottom: 5px;
+            padding-right: 7px;
+            padding-left: 7px;
+            padding-top: 2px;
+            padding-bottom: 3px;
             border-radius: 6px;
             background: rgba(255, 255, 255, 0.3);
             backdrop-filter: blur(1px);
@@ -96,21 +106,21 @@
         }
 
         .panel-section h3 {
-            margin: 0 0 10px 0;
+            margin: 0 0 4px 0;
             color: #000000;
-            font-size: 13px;
+            font-size: 16px;
             text-align: center;
             border-bottom: 1px solid rgba(222, 226, 230, 0.2);
-            padding-bottom: 6px;
+            padding-bottom: 0px;
             font-weight: bold;
         }
 
         /* Compact Button Grid for Main Controls */
         .control-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-columns: 1fr 1fr;
             gap: 4px;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
 
         .control-grid button {
@@ -126,10 +136,10 @@
             width: 100%;
             padding: 6px 8px;
             border: none;
-            border-radius: 4px;
+            border-radius: 5px;
             color: rgb(0, 0, 0);
             cursor: pointer;
-            font-size: 11px;
+            font-size: 15px;
             font-weight: 500;
             transition: all 0.2s;
             margin-bottom: 4px;
@@ -239,25 +249,34 @@
 
         /* Control Groups - Compact */
         .control-group {
-            margin-bottom: 10px;
+            margin-top: -2px;
+            margin-bottom: 1px;
         }
 
         .control-group label {
-            display: block;
-            margin-bottom: 3px;
+            /* display: ; */
+            /* margin-bottom: -5px; */
             font-weight: bold;
-            color: #000000;
-            font-size: 11px;
+            color: #00180c;
+            font-size: 14px;
+        }
+
+        .control-group .label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: -5px;
+            /* margin-top: 20px; */
         }
 
         input[type="range"] {
             width: 100%;
-            margin: 4px 0;
+            margin: 1px 0;
             -webkit-appearance: none;
             appearance: none;
-            height: 4px;
+            height: 5px;
             border-radius: 2px;
-            background: rgba(222, 226, 230, 0.3);
+            background: rgba(255, 255, 255, 0.3);
             outline: none;
         }
 
@@ -267,7 +286,11 @@
             width: 14px;
             height: 14px;
             border-radius: 50%;
-            background: rgba(75, 107, 205, 0.9);
+            /* radial gradient centered in the thumb */
+            background: radial-gradient(circle at center,
+                    #a1e5afe6 6%,
+                    #21822ce6 100%);
+            border: 1px solid #508756;
             cursor: pointer;
             backdrop-filter: blur(5px);
         }
@@ -282,21 +305,31 @@
         }
 
         .slider-value {
-            display: block;
-            text-align: center;
-            color: #000000;
+            /* display: block; */
+            text-align: right;
+            color: #00180c;
             font-weight: 600;
-            font-size: 10px;
-            margin-top: 2px;
+            font-size: 11px;
+            margin-top: 3px;
+            padding: 0px 2px;
+
+            /* min-width: 1px; */
+            /* margin-bottom: 10px; */
+            /* margin-top: 2px; */
         }
 
         .slider-value.changed {
-            background: rgba(57, 59, 57, 0.8);
-            color: rgb(0, 0, 0);
-            font-weight: bold;
+            background: #508756;
+            color: #a1e5afe6;
+            font-weight: normal;
             border-radius: 3px;
-            padding: 1px 4px;
+            padding: 0px 2px;
         }
+
+        /* 
+         #a1e5afe6 6%,
+                    #21822ce6 100%);
+            border: 1px solid #508756; */
 
         /* Info Boxes - Compact */
         .keyboard-info {
@@ -322,7 +355,7 @@
         }
 
         #config-display {
-            font-family: 'Consolas', 'Monaco', monospace;
+            font-family: 'Raleway';
             font-size: 9px;
             color: #000000;
             line-height: 1.2;
@@ -590,9 +623,92 @@
 
         <!-- Right Panel - Compact Controls with Glass Effect -->
         <div class="right-panel">
+
+            <!-- Force Parameters -->
+            <div class="panel-section">
+                <h3>🎛️ Forces</h3>
+
+                <div class="control-group">
+                    <div class="label-row">
+                        <label>Strength:</label>
+                        <span class="slider-value" id="strength-modifier-value">110</span>
+                    </div>
+                    <input type="range" id="strength-modifier-slider" min="50" max="150" value="110" step="5">
+                </div>
+
+                <div class="control-group">
+                    <div class="label-row">
+                        <label>Radius:</label>
+                        <span class="slider-value" id="radius-range-value">25</span>
+                    </div>
+                    <input type="range" id="radius-range-slider" min="10" max="50" value="25" step="1">
+                </div>
+
+                <div class="control-group">
+                    <div class="label-row">
+                        <label>Collision Strength:</label>
+                        <span class="slider-value" id="collision-strength-range-value">750</span>
+                    </div>
+                    <input type="range" id="collision-strength-range-slider" min="300" max="1200" value="750" step="25">
+                </div>
+
+                <div class="control-group">
+                    <div class="label-row">
+                        <label>Collision Radius:</label>
+                        <span class="slider-value" id="collision-radius-range-value">4</span>
+                    </div>
+                    <input type="range" id="collision-radius-range-slider" min="1" max="8" value="4" step="0.2">
+                </div>
+                <button id="reset-btn" class="reset-btn">Reset + New Forces</button>
+                <button id="reset-force-params-btn" class="default-btn">Reset Defaults</button>
+            </div>
+
+            <!-- Parameters -->
+            <div class="panel-section">
+                <h3>⚙️ PHYSICS</h3>
+
+                <div class="control-group">
+                    <div class="label-row">
+                        <label>Friction:</label>
+                        <span class="slider-value" id="friction-value">50</span>
+                    </div>
+                    <input type="range" id="friction-slider" min="1" max="200" value="50">
+                </div>
+
+                <div class="control-group">
+                    <div class="label-row">
+                        <label>Force Scale:</label>
+                        <span class="slider-value" id="force-scale-value">1.0</span>
+                    </div>
+                    <input type="range" id="force-scale-slider" min="0.1" max="5" step="0.1" value="1">
+                </div>
+            </div>
+
+            <!-- Visual Settings -->
+            <div class="panel-section">
+                <h3>🎨 VISUAL </h3>
+
+                <div class="control-group">
+                    <div class="label-row">
+                        <label>Size:</label>
+                        <span class="slider-value" id="particle-size-value">0.007</span>
+                    </div>
+                    <input type="range" id="particle-size-slider" min="0.002" max="0.013" step="0.001" value="0.007">
+                </div>
+
+                <div class="control-group">
+                    <div class="label-row">
+                        <label>Opacity:</label>
+                        <span class="slider-value" id="particle-opacity-value">0.75</span>
+                    </div>
+                    <input type="range" id="particle-opacity-slider" min="0.1" max="1" step="0.05" value="0.75">
+                </div>
+
+            </div>
+
             <!-- Simulation Controls -->
             <div class="panel-section">
-                <h3>🎮 Controls</h3>
+                <h3>🎮 CONTROLS</h3>
 
                 <!-- Compact 3-button grid for main controls -->
                 <div class="control-grid">
@@ -609,14 +725,14 @@
 
             <!-- Configuration Generator -->
             <div class="panel-section">
-                <h3>🌋 Generator</h3>
+                <h3>🌋 GENERATE SIM</h3>
 
                 <div class="keyboard-info">
                     <strong>Shortcuts:</strong><br>
                     <strong>SPACE</strong> - Randomize<br>
                     <strong>N</strong> - New Config<br>
                     <strong>P</strong> - Pause/Resume<br>
-                    <strong>R</strong> - Reset
+                    <strong>R</strong> - Reset Positions
                 </div>
 
                 <button id="randomize-btn" class="randomize-btn">Randomize Forces</button>
@@ -627,9 +743,13 @@
                 </div>
             </div>
 
+
+
+
+
             <!-- Save Configuration -->
             <div class="panel-section">
-                <h3>💾 Save</h3>
+                <h3>💾 SAVE / LOAD SIM</h3>
 
                 <div class="compact-buttons">
                     <button id="save-config-btn" class="save-btn">Save</button>
@@ -639,71 +759,6 @@
                 <div class="save-info">
                     <strong>Save:</strong> Ctrl+S<br>
                     <strong>Copy:</strong> Ctrl+Shift+C
-                </div>
-            </div>
-
-            <!-- Force Parameters -->
-            <div class="panel-section">
-                <h3>🎛️ Force Params</h3>
-
-                <div class="control-group">
-                    <label>Strength:</label>
-                    <input type="range" id="strength-modifier-slider" min="50" max="150" value="110" step="5">
-                    <span class="slider-value" id="strength-modifier-value">110</span>
-                </div>
-
-                <div class="control-group">
-                    <label>Radius:</label>
-                    <input type="range" id="radius-range-slider" min="10" max="50" value="25" step="1">
-                    <span class="slider-value" id="radius-range-value">25</span>
-                </div>
-
-                <div class="control-group">
-                    <label>Collision Strength:</label>
-                    <input type="range" id="collision-strength-range-slider" min="300" max="1200" value="750" step="25">
-                    <span class="slider-value" id="collision-strength-range-value">750</span>
-                </div>
-
-                <div class="control-group">
-                    <label>Collision Radius:</label>
-                    <input type="range" id="collision-radius-range-slider" min="1" max="8" value="4" step="0.2">
-                    <span class="slider-value" id="collision-radius-range-value">4</span>
-                </div>
-                <button id="reset-btn" class="reset-btn">Reset + New Forces</button>
-                <button id="reset-force-params-btn" class="default-btn">Reset Defaults</button>
-            </div>
-
-            <!-- Parameters -->
-            <div class="panel-section">
-                <h3>⚙️ Physics</h3>
-
-                <div class="control-group">
-                    <label>Friction:</label>
-                    <input type="range" id="friction-slider" min="1" max="200" value="50">
-                    <span class="slider-value" id="friction-value">50</span>
-                </div>
-
-                <div class="control-group">
-                    <label>Force Scale:</label>
-                    <input type="range" id="force-scale-slider" min="0.1" max="5" step="0.1" value="1">
-                    <span class="slider-value" id="force-scale-value">1.0</span>
-                </div>
-            </div>
-
-            <!-- Visual Settings -->
-            <div class="panel-section">
-                <h3>🎨 Visual</h3>
-
-                <div class="control-group">
-                    <label>Size:</label>
-                    <input type="range" id="particle-size-slider" min="0.002" max="0.013" step="0.001" value="0.007">
-                    <span class="slider-value" id="particle-size-value">0.007</span>
-                </div>
-
-                <div class="control-group">
-                    <label>Opacity:</label>
-                    <input type="range" id="particle-opacity-slider" min="0.1" max="1" step="0.05" value="0.75">
-                    <span class="slider-value" id="particle-opacity-value">0.75</span>
                 </div>
             </div>
         </div>
