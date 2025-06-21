@@ -304,10 +304,7 @@ style.textContent = `
         }
     }
     
-    .changed {
-        color: #ff6b35 !important;
-        font-weight: bold;
-    }
+
     
     /* Fullscreen styles */
     .canvas-container:fullscreen {
