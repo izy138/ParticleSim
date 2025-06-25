@@ -489,15 +489,15 @@
         @media (max-width: 1400px) {
             .right-panel {
                 /* width: 180px; - removed to keep consistent width */
-                /*
+        /*
             }
-        } */ 
+        } */
 
         /* @media (max-width: 1200px) {
             .right-panel {
                 /* width: 160px; - removed to keep consistent width */
-                /* padding: 10px; - removed to keep consistent padding */
-          /*  }
+        /* padding: 10px; - removed to keep consistent padding */
+        /*  }
 
             .simulation-title {
                 font-size: 18px;
@@ -553,12 +553,12 @@
 
         /* Large screen optimizations */
         @media (min-width: 1920px) {
+
             /* .right-panel {
                 /* width: 220px; - removed to keep consistent width */
-                /* padding: 16px; - removed to keep consistent padding */
-            /* } */ */
-
-            .simulation-title {
+            /* padding: 16px; - removed to keep consistent padding */
+            /* } */
+            */ .simulation-title {
                 font-size: 22px;
             }
         }
@@ -711,13 +711,14 @@
             align-items: center;
             justify-content: center;
         }
-            /* Add border to the arrow text
+
+        /* Add border to the arrow text
             text-shadow: 
                 -1px 0px 0 rgba(255, 255, 255, 0.4),
                 2px 0.5px 0 rgba(255, 255, 255, 0.4),
                 /* -1px 1px 0 rgba(255, 255, 255, 0.4), */
-                /* 2px -1px 0 rgba(255, 255, 255, 0.4);
-        } */ */
+        /* 2px -1px 0 rgba(255, 255, 255, 0.4);
+        } */
 
         .panel-toggle-btn:hover {
             background: rgba(255, 255, 255, 0.4);
@@ -730,7 +731,8 @@
         }
 
         .panel-toggle-btn.panel-open {
-            right: 206px; /* Default for 180px panel + 26px offset */
+            right: 206px;
+            /* Default for 180px panel + 26px offset */
             width: 20px;
             z-index: 1002;
         }
@@ -738,39 +740,45 @@
         /* Responsive breakpoints for panel toggle button */
         @media (max-width: 1400px) {
             .panel-toggle-btn.panel-open {
-                right: 206px; /* 180px panel + 26px offset */
+                right: 206px;
+                /* 180px panel + 26px offset */
             }
         }
 
         @media (max-width: 1200px) {
             .panel-toggle-btn.panel-open {
-                right: 206px; /* 180px panel + 26px offset */
+                right: 206px;
+                /* 180px panel + 26px offset */
             }
         }
 
         @media (max-width: 768px) {
             .panel-toggle-btn.panel-open {
-                right: 206px; /* 180px panel + 26px offset */
+                right: 206px;
+                /* 180px panel + 26px offset */
             }
         }
 
         @media (max-width: 480px) {
             .panel-toggle-btn.panel-open {
-                right: 206px; /* 180px panel + 26px offset */
+                right: 206px;
+                /* 180px panel + 26px offset */
             }
         }
 
         /* Large screen optimizations */
         @media (min-width: 1920px) {
             .panel-toggle-btn.panel-open {
-                right: 206px; /* 180px panel + 26px offset */
+                right: 206px;
+                /* 180px panel + 26px offset */
             }
         }
 
         /* Mobile landscape optimization */
         @media (max-height: 500px) and (orientation: landscape) {
             .panel-toggle-btn.panel-open {
-                right: 206px; /* 180px panel + 26px offset */
+                right: 206px;
+                /* 180px panel + 26px offset */
             }
         }
     </style>
@@ -784,7 +792,7 @@
                 <canvas id="webgpu-canvas"></canvas>
             </div>
         </div>
-        
+
         <!-- Right Panel - Compact Controls with Glass Effect -->
         <div class="right-panel" id="right-panel">
             <div class="panel-section">
@@ -902,7 +910,7 @@
             <div class="panel-section">
                 <h3>🌋 GENERATE SIM</h3>
 
-               
+
 
                 <button id="randomize-btn" class="randomize-btn">Randomize Forces</button>
                 <button id="new-config-btn" class="new-config-btn">Generate Random</button>
