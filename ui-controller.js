@@ -397,7 +397,7 @@ class UIController {
             document.getElementById('particle-opacity-value').textContent = this.simulator.config.particleOpacity;
         }
 
-        console.log("Sliders synced with configuration");
+        // console.log("Sliders synced with configuration");
     }
 
     // Event handlers:

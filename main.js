@@ -7,7 +7,7 @@ let responsiveSystem;
 
 // Initialize everything when DOM is ready
 document.addEventListener('DOMContentLoaded', async () => {
-    console.log('Initializing Particle Life Simulator with Responsive Canvas...');
+    // console.log('Initializing Particle Life Simulator with Responsive Canvas...');
 
     try {
         // Show loading state
@@ -57,7 +57,7 @@ function setupResponsiveFeatures() {
         resizeDebounce = setTimeout(() => {
             if (responsiveSystem) {
                 const canvasInfo = responsiveSystem.getCurrentSize();
-                console.log('Window resized - Canvas now:', canvasInfo);
+                // console.log('Window resized - Canvas now:', canvasInfo);
             }
         }, 300);
     });
@@ -139,12 +139,12 @@ function logCurrentSetup() {
     const canvasInfo = responsiveSystem.getCurrentSize();
     const deviceInfo = responsiveSystem.applyDeviceOptimizations();
 
-    console.log('=== CURRENT SETUP ===');
-    console.log('Canvas:', `${canvasInfo.width}×${canvasInfo.height} (${canvasInfo.aspectRatio.toFixed(2)}:1)`);
-    console.log('Screen:', `${canvasInfo.screenWidth}×${canvasInfo.screenHeight}`);
-    console.log('Device Category:', deviceInfo.category);
-    console.log('Recommended Particles:', deviceInfo.recommendedParticles);
-    console.log('Current Particles:', simulationManager.simulator.config.numParticles);
+    // console.log('=== CURRENT SETUP ===');
+    // console.log('Canvas:', `${canvasInfo.width}×${canvasInfo.height} (${canvasInfo.aspectRatio.toFixed(2)}:1)`);
+    // console.log('Screen:', `${canvasInfo.screenWidth}×${canvasInfo.screenHeight}`);
+    // console.log('Device Category:', deviceInfo.category);
+    // console.log('Recommended Particles:', deviceInfo.recommendedParticles);
+    // console.log('Current Particles:', simulationManager.simulator.config.numParticles);
 
     // Global functions for console testing
     window.testCanvasSize = (width, height) => {
@@ -164,12 +164,12 @@ function logCurrentSetup() {
         }
     };
 
-    console.log('=== CONSOLE COMMANDS ===');
-    console.log('testCanvasSize(width, height) - Test specific canvas size');
-    console.log('getCanvasInfo() - Get current canvas information');
-    console.log('getDeviceInfo() - Get device optimization info');
-    console.log('autoResize() - Trigger automatic resize');
-    console.log('Ctrl+F - Toggle fullscreen');
+    // console.log('=== CONSOLE COMMANDS ===');
+    // console.log('testCanvasSize(width, height) - Test specific canvas size');
+    // console.log('getCanvasInfo() - Get current canvas information');
+    // console.log('getDeviceInfo() - Get device optimization info');
+    // console.log('autoResize() - Trigger automatic resize');
+    // console.log('Ctrl+F - Toggle fullscreen');
 }
 
 // Add CSS for feedback animations (moved from old main.js)

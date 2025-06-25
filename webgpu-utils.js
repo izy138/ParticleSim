@@ -32,8 +32,8 @@ class WebGPUUtils {
           }
           
           // Get adapter features and limits
-          console.log("GPU Adapter Features:", Array.from(adapter.features));
-          console.log("GPU Adapter Limits:", adapter.limits);
+        //   console.log("GPU Adapter Features:", Array.from(adapter.features));
+        //   console.log("GPU Adapter Limits:", adapter.limits);
           
           // Request device with required features and limits
           const requiredFeatures = [];

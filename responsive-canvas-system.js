@@ -10,7 +10,7 @@ class ResponsiveCanvasSystem {
         this.minWidth = 0;      // No minimum width - let it scale down
         this.minHeight = 0;     // No minimum height - let it scale down
         this.padding = 7;       // Padding from screen edges
-        this.rightPanelWidth = 205; // Width of control panel
+        this.rightPanelWidth = 0; //205; // Width of control panel
         this.panelOpen = true;  // Track panel state
 
         this.currentSize = { width: 1000, height: 800 };
@@ -31,8 +31,8 @@ class ResponsiveCanvasSystem {
         const availableWidth = screenWidth - panelWidth - (this.padding * 2);
         const availableHeight = screenHeight - (this.padding * 2);
 
-        console.log('Screen dimensions:', screenWidth, 'x', screenHeight);
-        console.log('Panel open:', this.panelOpen, 'Available space:', availableWidth, 'x', availableHeight);
+        // console.log('Screen dimensions:', screenWidth, 'x', screenHeight);
+        // console.log('Panel open:', this.panelOpen, 'Available space:', availableWidth, 'x', availableHeight);
 
         // Calculate size while respecting max/min constraints
         let targetWidth = Math.min(Math.max(availableWidth, this.minWidth), this.maxWidth);
@@ -105,12 +105,12 @@ class ResponsiveCanvasSystem {
 
             // Only resize if dimensions actually changed
             if (canvas.width === size.width && canvas.height === size.height) {
-                console.log('Canvas size unchanged, skipping resize');
+                // console.log('Canvas size unchanged, skipping resize');
                 return true;
             }
 
-            console.log(`Resizing canvas from ${canvas.width}x${canvas.height} to ${size.width}x${size.height}`);
-            console.log(`Aspect ratio: ${size.aspectRatio.toFixed(2)}:1`);
+            // console.log(`Resizing canvas from ${canvas.width}x${canvas.height} to ${size.width}x${size.height}`);
+            // console.log(`Aspect ratio: ${size.aspectRatio.toFixed(2)}:1`);
 
             // Update canvas dimensions
             canvas.width = size.width;
@@ -127,7 +127,7 @@ class ResponsiveCanvasSystem {
         // Update simulator aspect ratio if available
         if (this.simulator && this.simulator.updateAspectRatio) {
             this.simulator.updateAspectRatio();
-            console.log('Simulator aspect ratio updated');
+            // console.log('Simulator aspect ratio updated');
         }
 
         return true;
@@ -154,7 +154,7 @@ class ResponsiveCanvasSystem {
         canvasContainer.style.left = this.padding + 'px';
         canvasContainer.style.top = this.padding + 'px';
 
-        console.log(`Canvas positioned at: ${this.padding}px, ${this.padding}px`);
+        // console.log(`Canvas positioned at: ${this.padding}px, ${this.padding}px`);
     }
 
     /**
@@ -167,7 +167,7 @@ class ResponsiveCanvasSystem {
             // Debounce resize events
             clearTimeout(resizeTimeout);
             resizeTimeout = setTimeout(() => {
-                console.log('Window resized, recalculating canvas size...');
+                // console.log('Window resized, recalculating canvas size...');
                 this.applyCanvasSize();
             }, 250);
         });
@@ -175,12 +175,12 @@ class ResponsiveCanvasSystem {
         // Handle orientation change on mobile
         window.addEventListener('orientationchange', () => {
             setTimeout(() => {
-                console.log('Orientation changed, recalculating canvas size...');
+                // console.log('Orientation changed, recalculating canvas size...');
                 this.applyCanvasSize();
             }, 500); // Delay to allow orientation to complete
         });
 
-        console.log('Resize listeners set up');
+        // console.log('Resize listeners set up');
     }
 
     /**
@@ -189,16 +189,16 @@ class ResponsiveCanvasSystem {
     initialize(simulator = null) {
         this.simulator = simulator;
 
-        console.log('Initializing responsive canvas system...');
-        console.log('Max dimensions:', this.maxWidth, 'x', this.maxHeight);
-        console.log('Min dimensions:', this.minWidth, 'x', this.minHeight);
+        // console.log('Initializing responsive canvas system...');
+        // console.log('Max dimensions:', this.maxWidth, 'x', this.maxHeight);
+        // console.log('Min dimensions:', this.minWidth, 'x', this.minHeight);
 
         // Apply initial size
         const success = this.applyCanvasSize();
 
         if (success) {
             console.log('✓ Responsive canvas system initialized');
-            console.log('Current size:', this.currentSize);
+            // console.log('Current size:', this.currentSize);
         }
 
         return success;
@@ -209,7 +209,7 @@ class ResponsiveCanvasSystem {
      */
     setSimulator(simulator) {
         this.simulator = simulator;
-        console.log('Simulator reference set for responsive system');
+        // console.log('Simulator reference set for responsive system');
     }
 
     /**
@@ -234,7 +234,7 @@ class ResponsiveCanvasSystem {
             aspectRatio: width / height
         };
 
-        console.log(`Setting custom size: ${customSize.width}x${customSize.height}`);
+        // console.log(`Setting custom size: ${customSize.width}x${customSize.height}`);
         this.applyCanvasSize(customSize);
     }
 
@@ -247,7 +247,7 @@ class ResponsiveCanvasSystem {
         // Update simulation size in config to match canvas
         this.simulator.config.simulationSize = [this.currentSize.width, this.currentSize.height];
 
-        console.log('Simulation config updated with new size');
+        // console.log('Simulation config updated with new size');
     }
 
     /**
@@ -292,8 +292,8 @@ class ResponsiveCanvasSystem {
         const category = this.getDeviceCategory();
         const size = this.getCurrentSize();
 
-        console.log(`Device category: ${category}`);
-        console.log(`Recommended particles: ${this.getRecommendedParticleCount()}`);
+        // console.log(`Device category: ${category}`);
+        // console.log(`Recommended particles: ${this.getRecommendedParticleCount()}`);
 
         // You can use this info to adjust particle counts, quality settings, etc.
         return {
@@ -308,7 +308,7 @@ class ResponsiveCanvasSystem {
      */
     togglePanel() {
         this.panelOpen = !this.panelOpen;
-        console.log('Panel toggled:', this.panelOpen ? 'open' : 'closed');
+        // console.log('Panel toggled:', this.panelOpen ? 'open' : 'closed');
         this.applyCanvasSize();
     }
 
@@ -317,7 +317,7 @@ class ResponsiveCanvasSystem {
      */
     setPanelState(open) {
         this.panelOpen = open;
-        console.log('Panel state set to:', open ? 'open' : 'closed');
+        // console.log('Panel state set to:', open ? 'open' : 'closed');
         this.applyCanvasSize();
     }
 }

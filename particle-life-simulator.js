@@ -27,12 +27,13 @@ class ParticleLifeSimulator {
             if (!this.gpu) return false;
 
             await this.loadConfiguration();
-            console.log("Configuration loaded:", {
-                numParticles: this.config.numParticles,
-                numTypes: this.config.numTypes,
-                particleSize: this.config.particleSize,
-                particleOpacity: this.config.particleOpacity
-            });
+            // console.log("Configuration loaded:"
+            //     , {
+            //     numParticles: this.config.numParticles,
+            //     numTypes: this.config.numTypes,
+            //     particleSize: this.config.particleSize,
+            //     particleOpacity: this.config.particleOpacity
+            // });
 
             const computeShaderCode = await WebGPUUtils.loadShader('shaders/particle-compute.wgsl');
             const renderShaderCode = await WebGPUUtils.loadShader('shaders/particle-render.wgsl');
@@ -87,7 +88,7 @@ class ParticleLifeSimulator {
             this.config.colors = config.species.map(species => species.color);
             this.config.attractionMatrix = this.extractAttractionMatrix(config.species);
 
-            console.log("Loaded configuration from particle-life-system.json");
+            // console.log("Loaded configuration from particle-life-system.json");
         } catch (error) {
             console.warn("Could not load particle-life-system.json:", error.message);
             this.config.friction = 50.0;
@@ -156,7 +157,7 @@ class ParticleLifeSimulator {
         const { device, canvas } = this.gpu;
         const { numParticles, numTypes } = this.config;
 
-        console.log(`Initializing ${numParticles} particles with ${numTypes} types`);
+        // console.log(`Initializing ${numParticles} particles with ${numTypes} types`);
 
         const aspectRatio = canvas.width / canvas.height;
         const particleData = new Float32Array(numParticles * 5);
@@ -898,9 +899,9 @@ class ParticleLifeSimulator {
         if (!this.gpu || !this.gpu.device) return;
 
         this.config.friction = frictionHalfLife;
-        const dt = 0.002;
+        const dt = 0.0023;
         const friction = Math.exp(-Math.log(2) * dt / frictionHalfLife);
-
+w
         // Get current aspect ratio from canvas
         const aspectRatio = this.gpu.canvas.width / this.gpu.canvas.height;
 
