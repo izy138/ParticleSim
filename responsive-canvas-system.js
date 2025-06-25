@@ -7,10 +7,11 @@ class ResponsiveCanvasSystem {
     constructor() {
         this.maxWidth = 1600;   // Maximum simulation width for very large screens
         this.maxHeight = 1000;  // Maximum simulation height for very large screens
-        this.minWidth = 800;    // Minimum width for very small screens
-        this.minHeight = 600;   // Minimum height for very small screens
-        this.padding = 40;      // Padding from screen edges
-        this.rightPanelWidth = 220; // Width of control panel
+        this.minWidth = 0;      // No minimum width - let it scale down
+        this.minHeight = 0;     // No minimum height - let it scale down
+        this.padding = 7;       // Padding from screen edges
+        this.rightPanelWidth = 205; // Width of control panel
+        this.panelOpen = true;  // Track panel state
 
         this.currentSize = { width: 1000, height: 800 };
         this.simulator = null;
@@ -25,12 +26,13 @@ class ResponsiveCanvasSystem {
         const screenWidth = window.innerWidth;
         const screenHeight = window.innerHeight;
 
-        // Account for right panel and padding
-        const availableWidth = screenWidth - this.rightPanelWidth - (this.padding * 2);
+        // Account for right panel and padding using the updated values
+        const panelWidth = this.panelOpen ? this.rightPanelWidth : 0;
+        const availableWidth = screenWidth - panelWidth - (this.padding * 2);
         const availableHeight = screenHeight - (this.padding * 2);
 
         console.log('Screen dimensions:', screenWidth, 'x', screenHeight);
-        console.log('Available space:', availableWidth, 'x', availableHeight);
+        console.log('Panel open:', this.panelOpen, 'Available space:', availableWidth, 'x', availableHeight);
 
         // Calculate size while respecting max/min constraints
         let targetWidth = Math.min(Math.max(availableWidth, this.minWidth), this.maxWidth);
@@ -39,14 +41,15 @@ class ResponsiveCanvasSystem {
         // Maintain a reasonable aspect ratio (prefer 16:10 to 4:3 range)
         const aspectRatio = targetWidth / targetHeight;
 
+        // Comment out aspect ratio adjustments to allow natural scaling
         // If aspect ratio is too wide, reduce width
-        if (aspectRatio > 1.8) {
-            targetWidth = targetHeight * 1.6;
-        }
+        // if (aspectRatio > 1.8) {
+        //     targetWidth = targetHeight * 1.6;
+        // }
         // If aspect ratio is too tall, reduce height  
-        else if (aspectRatio < 0.8) {
-            targetHeight = targetWidth * 0.8;
-        }
+        // else if (aspectRatio < 0.8) {
+        //     targetHeight = targetWidth * 0.8;
+        // }
 
         // Ensure we don't exceed screen bounds after adjustment
         if (targetWidth > availableWidth) {
@@ -76,35 +79,50 @@ class ResponsiveCanvasSystem {
      * Apply calculated size to canvas and update simulation
      */
     applyCanvasSize(size = null) {
-        if (!size) {
-            size = this.calculateOptimalSize();
-        }
-
+        const mainContainer = document.querySelector('.main-container');
+        const isFullscreen = mainContainer && mainContainer.classList.contains('fullscreen');
         const canvas = document.getElementById('webgpu-canvas');
         if (!canvas) {
             console.error('Canvas not found');
             return false;
         }
 
-        // Only resize if dimensions actually changed
-        if (canvas.width === size.width && canvas.height === size.height) {
-            console.log('Canvas size unchanged, skipping resize');
-            return true;
+        if (isFullscreen) {
+            // In fullscreen, use the full window size and devicePixelRatio
+            const dpr = window.devicePixelRatio || 1;
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            canvas.width = Math.floor(width * dpr);
+            canvas.height = Math.floor(height * dpr);
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+            this.currentSize = { width, height, aspectRatio: width / height };
+            // No centering in fullscreen
+        } else {
+            if (!size) {
+                size = this.calculateOptimalSize();
+            }
+
+            // Only resize if dimensions actually changed
+            if (canvas.width === size.width && canvas.height === size.height) {
+                console.log('Canvas size unchanged, skipping resize');
+                return true;
+            }
+
+            console.log(`Resizing canvas from ${canvas.width}x${canvas.height} to ${size.width}x${size.height}`);
+            console.log(`Aspect ratio: ${size.aspectRatio.toFixed(2)}:1`);
+
+            // Update canvas dimensions
+            canvas.width = size.width;
+            canvas.height = size.height;
+            canvas.style.width = size.width + 'px';
+            canvas.style.height = size.height + 'px';
+
+            this.currentSize = size;
+
+            // Center the canvas container
+            this.centerCanvas();
         }
-
-        console.log(`Resizing canvas from ${canvas.width}x${canvas.height} to ${size.width}x${size.height}`);
-        console.log(`Aspect ratio: ${size.aspectRatio.toFixed(2)}:1`);
-
-        // Update canvas dimensions
-        canvas.width = size.width;
-        canvas.height = size.height;
-        canvas.style.width = size.width + 'px';
-        canvas.style.height = size.height + 'px';
-
-        this.currentSize = size;
-
-        // Center the canvas container
-        this.centerCanvas();
 
         // Update simulator aspect ratio if available
         if (this.simulator && this.simulator.updateAspectRatio) {
@@ -119,6 +137,8 @@ class ResponsiveCanvasSystem {
      * Center the canvas container on screen
      */
     centerCanvas() {
+        const mainContainer = document.querySelector('.main-container');
+        if (mainContainer && mainContainer.classList.contains('fullscreen')) return; // Skip centering in fullscreen
         const canvasContainer = document.querySelector('.canvas-container');
         if (!canvasContainer) return;
 
@@ -128,13 +148,13 @@ class ResponsiveCanvasSystem {
         // Calculate centering (accounting for right panel)
         const effectiveScreenWidth = screenWidth - this.rightPanelWidth;
         const leftMargin = Math.max(0, (effectiveScreenWidth - this.currentSize.width) / 2);
-        const topMargin = Math.max(20, (screenHeight - this.currentSize.height) / 2);
+        const topMargin = Math.max(0, (screenHeight - this.currentSize.height) / 2);
 
         canvasContainer.style.position = 'absolute';
-        canvasContainer.style.left = leftMargin + 'px';
-        canvasContainer.style.top = topMargin + 'px';
+        canvasContainer.style.left = this.padding + 'px';
+        canvasContainer.style.top = this.padding + 'px';
 
-        console.log(`Canvas centered at: ${leftMargin}px, ${topMargin}px`);
+        console.log(`Canvas positioned at: ${this.padding}px, ${this.padding}px`);
     }
 
     /**
@@ -281,5 +301,23 @@ class ResponsiveCanvasSystem {
             recommendedParticles: this.getRecommendedParticleCount(),
             currentSize: size
         };
+    }
+
+    /**
+     * Toggle panel state and recalculate canvas size
+     */
+    togglePanel() {
+        this.panelOpen = !this.panelOpen;
+        console.log('Panel toggled:', this.panelOpen ? 'open' : 'closed');
+        this.applyCanvasSize();
+    }
+
+    /**
+     * Set panel state explicitly
+     */
+    setPanelState(open) {
+        this.panelOpen = open;
+        console.log('Panel state set to:', open ? 'open' : 'closed');
+        this.applyCanvasSize();
     }
 }

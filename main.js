@@ -50,14 +50,6 @@ document.addEventListener('DOMContentLoaded', async () => {
  * Set up additional responsive features
  */
 function setupResponsiveFeatures() {
-    // Add keyboard shortcut for fullscreen
-    document.addEventListener('keydown', (event) => {
-        if (event.code === 'KeyF' && event.ctrlKey) {
-            event.preventDefault();
-            toggleFullscreen();
-        }
-    });
-
     // Add resize debugging (remove in production)
     let resizeDebounce;
     window.addEventListener('resize', () => {
@@ -69,105 +61,6 @@ function setupResponsiveFeatures() {
             }
         }, 300);
     });
-
-    // Add button for manual canvas resize testing
-    addCanvasResizeControls();
-}
-
-/**
- * Add manual canvas resize controls for testing
- */
-function addCanvasResizeControls() {
-    const controlsSection = document.querySelector('.right-panel .panel-section');
-    if (!controlsSection) return;
-
-    // Create resize testing section
-    const resizeSection = document.createElement('div');
-    resizeSection.className = 'panel-section';
-    resizeSection.innerHTML = `
-        <h3>📐 Canvas Size</h3>
-        <button id="resize-auto-btn" class="default-btn">Auto Resize</button>
-        <button id="resize-test-btn" class="default-btn">Test Sizes</button>
-        <div style="font-size: 10px; margin-top: 5px; color: #000; font-weight: bold;" id="canvas-size-display">
-            Loading...
-        </div>
-    `;
-
-    // Add after the generator section
-    const generatorSection = controlsSection.parentElement.children[1];
-    if (generatorSection && generatorSection.nextSibling) {
-        generatorSection.parentNode.insertBefore(resizeSection, generatorSection.nextSibling);
-    } else {
-        controlsSection.parentElement.appendChild(resizeSection);
-    }
-
-    // Add event listeners
-    document.getElementById('resize-auto-btn').addEventListener('click', () => {
-        if (responsiveSystem) {
-            responsiveSystem.applyCanvasSize();
-            updateCanvasSizeDisplay();
-        }
-    });
-
-    document.getElementById('resize-test-btn').addEventListener('click', testCanvasSizes);
-
-    // Update display
-    updateCanvasSizeDisplay();
-}
-
-/**
- * Update canvas size display
- */
-function updateCanvasSizeDisplay() {
-    const display = document.getElementById('canvas-size-display');
-    if (!display || !responsiveSystem) return;
-
-    const canvasInfo = responsiveSystem.getCurrentSize();
-    const deviceCategory = responsiveSystem.getDeviceCategory();
-
-    display.innerHTML = `
-        Size: ${canvasInfo.width}×${canvasInfo.height}<br>
-        Ratio: ${canvasInfo.aspectRatio.toFixed(2)}:1<br>
-        Device: ${deviceCategory}<br>
-        Screen: ${window.innerWidth}×${window.innerHeight}
-    `;
-}
-
-/**
- * Test different canvas sizes
- */
-async function testCanvasSizes() {
-    if (!responsiveSystem || !simulationManager.simulator) return;
-
-    const testBtn = document.getElementById('resize-test-btn');
-    testBtn.disabled = true;
-    testBtn.textContent = 'Testing...';
-
-    const originalSize = responsiveSystem.getCurrentSize();
-
-    const testSizes = [
-        { width: 800, height: 600, name: 'Small' },
-        { width: 1200, height: 800, name: 'Medium' },
-        { width: 1600, height: 900, name: 'Large' },
-        { width: 1920, height: 1080, name: 'HD' },
-        { width: originalSize.width, height: originalSize.height, name: 'Original' }
-    ];
-
-    for (let i = 0; i < testSizes.length; i++) {
-        const size = testSizes[i];
-        console.log(`Testing ${size.name}: ${size.width}×${size.height}`);
-
-        responsiveSystem.setSize(size.width, size.height);
-        updateCanvasSizeDisplay();
-
-        // Wait to see the effect
-        await new Promise(resolve => setTimeout(resolve, 1500));
-    }
-
-    testBtn.textContent = 'Test Sizes';
-    testBtn.disabled = false;
-
-    console.log('Canvas size test complete');
 }
 
 /**
@@ -304,7 +197,10 @@ style.textContent = `
         }
     }
     
-
+    .changed {
+        color: #ff6b35 !important;
+        font-weight: bold;
+    }
     
     /* Fullscreen styles */
     .canvas-container:fullscreen {

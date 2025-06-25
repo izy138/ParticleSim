@@ -16,6 +16,7 @@ class UIController {
         this.setupEventListeners();
         this.setupSliders();
         this.setupKeyboardControls();
+        this.initializePanelState();
     }
 
     get simulator() {
@@ -23,13 +24,13 @@ class UIController {
     }
 
     setupEventListeners() {
-        // Main control buttons
-        document.getElementById('start-btn').addEventListener('click', () => this.startSimulation());
-        // document.getElementById('stop-btn').addEventListener('click', () => this.stopSimulation());
-        document.getElementById('pause-btn').addEventListener('click', () => this.togglePause());
+        // Main control buttons - single toggle button
+        document.getElementById('play-pause-btn').addEventListener('click', () => this.togglePlayPause());
         document.getElementById('reset-btn').addEventListener('click', () => this.resetWithModification());
         document.getElementById('reset-positions-btn').addEventListener('click', () => this.resetPositionsOnly());
-        document.getElementById('reset-to-original-btn').addEventListener('click', () => this.resetToOriginal());
+        document.getElementById('fullscreen-btn').addEventListener('click', () => this.toggleFullscreen());
+        document.getElementById('panel-toggle-btn').addEventListener('click', () => this.togglePanel());
+        // document.getElementById('reset-to-original-btn').addEventListener('click', () => this.resetToOriginal());
 
         // Configuration buttons
         document.getElementById('randomize-btn').addEventListener('click', () => this.randomizeForces());
@@ -38,6 +39,28 @@ class UIController {
         // Save/load buttons
         document.getElementById('save-config-btn').addEventListener('click', () => this.saveConfiguration());
         document.getElementById('copy-config-btn').addEventListener('click', () => this.copyConfiguration());
+
+        // Listen for fullscreen changes (e.g., user presses Escape)
+        document.addEventListener('fullscreenchange', () => {
+            const mainContainer = document.querySelector('.main-container');
+            const fullscreenBtn = document.getElementById('fullscreen-btn');
+            
+            if (!document.fullscreenElement) {
+                // Fullscreen was exited (by any means)
+                mainContainer.classList.remove('fullscreen');
+                fullscreenBtn.classList.remove('fullscreen');
+                fullscreenBtn.textContent = '🖥️ Fullscreen';
+                
+                // Force recalculation of normal canvas size
+                setTimeout(() => {
+                    if (this.simulationManager.responsiveSystem) {
+                        this.simulationManager.responsiveSystem.applyCanvasSize(null);
+                    }
+                }, 100);
+                
+                console.log('Fullscreen exited (external)');
+            }
+        });
     }
 
     setupSliders() {
@@ -254,8 +277,7 @@ class UIController {
                         break;
                     case 'KeyP':
                         if (this.simulator) {
-                            this.simulator.togglePause();
-                            this.updateButtonStates();
+                            this.togglePlayPause();
                             showFeedback(this.simulator.isPaused ? '⏸️ Paused' : '▶️ Resumed', '#2196F3');
                         }
                         break;
@@ -265,6 +287,18 @@ class UIController {
                             this.updateButtonStates();
                             showFeedback('🔄 Reset', '#2196F3');
                         }
+                        break;
+                    case 'KeyF':
+                        if (event.ctrlKey) {
+                            event.preventDefault();
+                            this.toggleFullscreen();
+                            showFeedback('🖥️ Fullscreen Toggled', '#9C27B0');
+                        }
+                        break;
+                    case 'Tab':
+                        event.preventDefault();
+                        this.togglePanel();
+                        showFeedback('📋 Panel Toggled', '#FF9800');
                         break;
                 }
             } catch (error) {
@@ -277,46 +311,32 @@ class UIController {
     }
 
     updateButtonStates() {
-        const startBtn = document.getElementById('start-btn');
-        const pauseBtn = document.getElementById('pause-btn');
-        // const stopBtn = document.getElementById('stop-btn');
+        const playPauseBtn = document.getElementById('play-pause-btn');
         const resetBtn = document.getElementById('reset-btn');
 
         if (!this.simulator) {
-            startBtn.disabled = false;
-            pauseBtn.disabled = true;
-            // stopBtn.disabled = true;
+            playPauseBtn.disabled = false;
             resetBtn.disabled = true;
-            if (pauseBtn) {
-                pauseBtn.textContent = 'Pause';
-                pauseBtn.classList.remove('paused');
-            }
+            playPauseBtn.textContent = '▶️';
+            playPauseBtn.classList.remove('paused');
             return;
         }
 
         if (!this.simulator.isRunning) {
-            startBtn.disabled = false;
-            pauseBtn.disabled = true;
-            // stopBtn.disabled = true;
+            playPauseBtn.disabled = false;
             resetBtn.disabled = false;
-            if (pauseBtn) {
-                pauseBtn.textContent = 'Pause';
-                pauseBtn.classList.remove('paused');
-            }
+            playPauseBtn.textContent = '▶️';
+            playPauseBtn.classList.remove('paused');
         } else {
-            startBtn.disabled = true;
-            pauseBtn.disabled = false;
-            // stopBtn.disabled = false;
+            playPauseBtn.disabled = false;
             resetBtn.disabled = false;
 
-            if (pauseBtn) {
-                if (this.simulator.isPaused) {
-                    pauseBtn.textContent = 'Unpause';
-                    pauseBtn.classList.add('paused');
-                } else {
-                    pauseBtn.textContent = 'Pause';
-                    pauseBtn.classList.remove('paused');
-                }
+            if (this.simulator.isPaused) {
+                playPauseBtn.textContent = '▶️';
+                playPauseBtn.classList.remove('paused');
+            } else {
+                playPauseBtn.textContent = '⏸️';
+                playPauseBtn.classList.add('paused');
             }
         }
     }
@@ -400,6 +420,63 @@ class UIController {
         }
     }
 
+    togglePlayPause() {
+        if (this.simulator) {
+            if (!this.simulator.isRunning) {
+                // Start the simulation
+                this.simulationManager.startSimulation();
+            } else {
+                // Toggle pause state
+                this.simulator.togglePause();
+            }
+            this.updateButtonStates();
+        }
+    }
+
+    toggleFullscreen() {
+        const mainContainer = document.querySelector('.main-container');
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        
+        if (!document.fullscreenElement) {
+            // Enter fullscreen
+            mainContainer.requestFullscreen().then(() => {
+                mainContainer.classList.add('fullscreen');
+                fullscreenBtn.classList.add('fullscreen');
+                fullscreenBtn.textContent = '🖥️ Exit Fullscreen';
+                
+                // Resize canvas after fullscreen
+                setTimeout(() => {
+                    if (this.simulationManager.responsiveSystem) {
+                        this.simulationManager.responsiveSystem.applyCanvasSize();
+                    }
+                }, 100);
+                
+                console.log('Entered fullscreen mode');
+            }).catch(err => {
+                console.error('Error entering fullscreen:', err);
+            });
+        } else {
+            // Exit fullscreen
+            document.exitFullscreen().then(() => {
+                mainContainer.classList.remove('fullscreen');
+                fullscreenBtn.classList.remove('fullscreen');
+                fullscreenBtn.textContent = '🖥️ Fullscreen';
+                
+                // Force recalculation of normal canvas size after fullscreen exit
+                setTimeout(() => {
+                    if (this.simulationManager.responsiveSystem) {
+                        // Force a complete recalculation by passing null to applyCanvasSize
+                        this.simulationManager.responsiveSystem.applyCanvasSize(null);
+                    }
+                }, 100);
+                
+                console.log('Exited fullscreen mode');
+            }).catch(err => {
+                console.error('Error exiting fullscreen:', err);
+            });
+        }
+    }
+
     resetWithModification() {
         if (this.simulator) {
             const resetBtn = document.getElementById('reset-btn');
@@ -412,7 +489,7 @@ class UIController {
 
                 resetBtn.textContent = '✓ Forces Modified!';
                 setTimeout(() => {
-                    resetBtn.textContent = 'Update Forces';
+                    resetBtn.textContent = 'Reset + Modify Forces';
                     resetBtn.disabled = false;
                 }, 1000);
 
@@ -420,7 +497,7 @@ class UIController {
                 console.error('Error during reset:', error);
                 resetBtn.textContent = '✗ Error';
                 setTimeout(() => {
-                    resetBtn.textContent = 'Update Forces';
+                    resetBtn.textContent = 'Reset + Modify Forces';
                     resetBtn.disabled = false;
                 }, 2000);
             }
@@ -494,7 +571,7 @@ class UIController {
                 await this.simulationManager.restartWithNewConfiguration();
                 newConfigBtn.textContent = '✓ New Config!';
                 setTimeout(() => {
-                    newConfigBtn.textContent = 'Generate Random Sim';
+                    newConfigBtn.textContent = 'New Complete Config';
                     newConfigBtn.disabled = false;
                 }, 1000);
             } catch (error) {
@@ -586,6 +663,50 @@ class UIController {
     // Helper method to set simulator reference
     setSimulator(simulator) {
         this.simulator = simulator;
+    }
+
+    togglePanel() {
+        const rightPanel = document.getElementById('right-panel');
+        const toggleBtn = document.getElementById('panel-toggle-btn');
+        
+        // Toggle panel state in responsive system
+        this.simulationManager.responsiveSystem.togglePanel();
+        
+        // Update UI classes
+        if (this.simulationManager.responsiveSystem.panelOpen) {
+            rightPanel.classList.remove('panel-closed');
+            rightPanel.classList.add('panel-open');
+            toggleBtn.classList.remove('panel-closed');
+            toggleBtn.classList.add('panel-open');
+            toggleBtn.textContent = '▶';
+        } else {
+            rightPanel.classList.remove('panel-open');
+            rightPanel.classList.add('panel-closed');
+            toggleBtn.classList.remove('panel-open');
+            toggleBtn.classList.add('panel-closed');
+            toggleBtn.textContent = '◀';
+        }
+        
+        console.log('Panel toggled:', this.simulationManager.responsiveSystem.panelOpen ? 'open' : 'closed');
+    }
+
+    initializePanelState() {
+        const rightPanel = document.getElementById('right-panel');
+        const toggleBtn = document.getElementById('panel-toggle-btn');
+        
+        if (this.simulationManager.responsiveSystem.panelOpen) {
+            rightPanel.classList.remove('panel-closed');
+            rightPanel.classList.add('panel-open');
+            toggleBtn.classList.remove('panel-closed');
+            toggleBtn.classList.add('panel-open');
+            toggleBtn.textContent = '▶';
+        } else {
+            rightPanel.classList.remove('panel-open');
+            rightPanel.classList.add('panel-closed');
+            toggleBtn.classList.remove('panel-open');
+            toggleBtn.classList.add('panel-closed');
+            toggleBtn.textContent = '◀';
+        }
     }
 }
 

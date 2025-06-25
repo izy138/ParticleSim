@@ -15,6 +15,7 @@
     <style>
         body {
             margin: 0;
+            padding: 0;
             font-family: 'Space Grotesk', sans-serif;
             background-color: #000000;
             /* overflow-x: auto; */
@@ -77,15 +78,15 @@
             display: block;
         }
 
-        /* Right Panel - Floating Glass Overlay */
+        /* Right Panel - Compact Controls with Glass Effect */
         .right-panel {
             width: 180px;
             /* Compact width */
             background: rgba(255, 255, 255, 0.16);
-            backdrop-filter: blur(3px);
-            -webkit-backdrop-filter: blur(2px);
+            backdrop-filter: blur(1.5px);
+            /* -webkit-backdrop-filter: blur(0px); */
             border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 12px;
+            border-radius: 7px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
             padding: 12px;
             max-height: calc(100vh - 27px);
@@ -95,6 +96,15 @@
             top: 0px;
             right: 0px;
             z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+
+        .right-panel.panel-closed {
+            transform: translateX(100%);
+        }
+
+        .right-panel.panel-open {
+            transform: translateX(0);
         }
 
         /* Panel Section Headers - Compact */
@@ -105,8 +115,9 @@
             padding-top: 2px;
             padding-bottom: 3px;
             border-radius: 6px;
-            background: rgba(255, 255, 255, 0.3);
-            backdrop-filter: blur(1px);
+            backdrop-filter: blur(0px);
+            /* -webkit-backdrop-filter: blur(3px); */
+            background: rgba(179, 194, 180, 0.55);
             border: 1px solid rgba(255, 255, 255, 0.4);
         }
 
@@ -131,6 +142,22 @@
         .control-grid button {
             padding: 8px 4px;
             font-size: 11px;
+            margin-bottom: 0;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        /* Force buttons grid for Update Forces and Reset Defaults */
+        .force-buttons-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px;
+            margin-bottom: 4px;
+        }
+
+        .force-buttons-grid button {
+            padding: 6px 4px;
+            font-size: 10px;
             margin-bottom: 0;
             border-radius: 4px;
             font-weight: 600;
@@ -186,6 +213,27 @@
 
         .pause-btn.paused:hover {
             background: rgba(33, 136, 56, 0.9);
+        }
+
+        /* Play/Pause Toggle Button */
+        .play-pause-btn {
+            background: rgba(40, 167, 69, 0.8);
+            width: 100%;
+            padding: 8px 4px;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+
+        .play-pause-btn:hover {
+            background: rgba(33, 136, 56, 0.9);
+        }
+
+        .play-pause-btn.paused {
+            background: rgba(255, 184, 126, 0.8);
+        }
+
+        .play-pause-btn.paused:hover {
+            background: rgba(217, 158, 119, 0.9);
         }
 
         /* .stop-btn {
@@ -343,7 +391,7 @@
             padding: 6px;
             border-radius: 4px;
             margin: 6px 0;
-            font-size: 10px;
+            font-size: 14px;
             line-height: 1.3;
             color: #000000;
             font-weight: bold;
@@ -437,68 +485,34 @@
             background: rgba(255, 255, 255, 0.3);
         }
 
-        /* Responsive Design */
+        /* 
         @media (max-width: 1400px) {
             .right-panel {
-                width: 200px;
+                /* width: 180px; - removed to keep consistent width */
+                /*
             }
-        }
+        } */ 
 
-        /* @media (max-width: 768px) {
+        /* @media (max-width: 1200px) {
             .right-panel {
-                position: fixed;
-                top: 10px;
-                right: 10px;
-                left: 10px;
-                width: auto;
-                max-height: 50vh;
-            }
-
-            .simulation-title {
-                font-size: 16px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .right-panel {
-                max-height: 40vh;
-                padding: 8px;
-            }
-
-            .panel-section {
-                padding: 6px;
-                margin-bottom: 8px;
-            }
-        } */
-
-
-        /* Responsive breakpoints */
-        @media (max-width: 1400px) {
-            .right-panel {
-                width: 180px;
-            }
-        }
-
-        @media (max-width: 1200px) {
-            .right-panel {
-                width: 160px;
-                padding: 10px;
-            }
+                /* width: 160px; - removed to keep consistent width */
+                /* padding: 10px; - removed to keep consistent padding */
+          /*  }
 
             .simulation-title {
                 font-size: 18px;
             }
-        }
+        } */
 
         @media (max-width: 768px) {
             .right-panel {
                 position: fixed;
-                top: 10px;
-                right: 10px;
+                top: 0px;
+                right: 0px;
                 left: auto;
-                width: 180px;
+                /* width: 160px; - removed to keep consistent width */
                 max-height: 60vh;
-                padding: 8px;
+                /* padding: 8px; - removed to keep consistent padding */
             }
 
             .simulation-title {
@@ -513,9 +527,9 @@
 
         @media (max-width: 480px) {
             .right-panel {
-                width: 150px;
+                /* width: 150px; - removed to keep consistent width */
                 max-height: 50vh;
-                padding: 6px;
+                /* padding: 6px; - removed to keep consistent padding */
             }
 
             .panel-section {
@@ -539,20 +553,13 @@
 
         /* Large screen optimizations */
         @media (min-width: 1920px) {
-            .right-panel {
-                width: 220px;
-                padding: 16px;
-            }
+            /* .right-panel {
+                /* width: 220px; - removed to keep consistent width */
+                /* padding: 16px; - removed to keep consistent padding */
+            /* } */ */
 
             .simulation-title {
                 font-size: 22px;
-            }
-        }
-
-        /* Ultra-wide screen support */
-        @media (min-aspect-ratio: 21/9) {
-            .center-panel {
-                justify-content: center;
             }
         }
 
@@ -560,7 +567,7 @@
         @media (max-height: 500px) and (orientation: landscape) {
             .right-panel {
                 max-height: calc(100vh - 20px);
-                width: 140px;
+                /* width: 140px; - removed to keep consistent width */
             }
 
             .simulation-title {
@@ -613,6 +620,159 @@
                 transition: none;
             }
         }
+
+        /* Fullscreen Mode Styles */
+        .main-container.fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            background: #000000;
+        }
+
+        .main-container.fullscreen .right-panel {
+            display: none;
+        }
+
+        .main-container.fullscreen .panel-toggle-btn {
+            display: none;
+        }
+
+        .main-container.fullscreen .center-panel {
+            width: 100%;
+            height: 100%;
+        }
+
+        .main-container.fullscreen .canvas-container {
+            width: 100vw !important;
+            height: 100vh !important;
+            border-radius: 0;
+            box-shadow: none;
+            position: fixed;
+            left: 0;
+            top: 0;
+            margin: 0;
+            padding: 0;
+        }
+
+        .main-container.fullscreen canvas {
+            width: 100vw !important;
+            height: 100vh !important;
+            border: none;
+            border-radius: 0;
+            display: block;
+            position: fixed;
+            left: 0;
+            top: 0;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Fullscreen button state */
+        .fullscreen-btn.fullscreen {
+            background: rgba(220, 53, 69, 0.8) !important;
+        }
+
+        .fullscreen-btn.fullscreen:hover {
+            background: rgba(200, 35, 51, 0.9) !important;
+        }
+
+        /* Fullscreen Button */
+        .fullscreen-btn {
+            background: rgba(108, 117, 125, 0.8);
+        }
+
+        .fullscreen-btn:hover {
+            background: rgba(90, 98, 104, 0.9);
+        }
+
+        /* Panel Toggle Button */
+        .panel-toggle-btn {
+            position: fixed;
+            right: 0;
+            top: 4.7%;
+            transform: translateY(-50%);
+            width: 30px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.27);
+            backdrop-filter: blur(1px);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-right: none;
+            border-radius: 8px 0 0 8px;
+            color: #000000;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 1001;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+            /* Add border to the arrow text
+            text-shadow: 
+                -1px 0px 0 rgba(255, 255, 255, 0.4),
+                2px 0.5px 0 rgba(255, 255, 255, 0.4),
+                /* -1px 1px 0 rgba(255, 255, 255, 0.4), */
+                /* 2px -1px 0 rgba(255, 255, 255, 0.4);
+        } */ */
+
+        .panel-toggle-btn:hover {
+            background: rgba(255, 255, 255, 0.4);
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        .panel-toggle-btn.panel-closed {
+            right: 0;
+            width: 20px;
+        }
+
+        .panel-toggle-btn.panel-open {
+            right: 206px; /* Default for 180px panel + 26px offset */
+            width: 20px;
+            z-index: 1002;
+        }
+
+        /* Responsive breakpoints for panel toggle button */
+        @media (max-width: 1400px) {
+            .panel-toggle-btn.panel-open {
+                right: 206px; /* 180px panel + 26px offset */
+            }
+        }
+
+        @media (max-width: 1200px) {
+            .panel-toggle-btn.panel-open {
+                right: 206px; /* 180px panel + 26px offset */
+            }
+        }
+
+        @media (max-width: 768px) {
+            .panel-toggle-btn.panel-open {
+                right: 206px; /* 180px panel + 26px offset */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .panel-toggle-btn.panel-open {
+                right: 206px; /* 180px panel + 26px offset */
+            }
+        }
+
+        /* Large screen optimizations */
+        @media (min-width: 1920px) {
+            .panel-toggle-btn.panel-open {
+                right: 206px; /* 180px panel + 26px offset */
+            }
+        }
+
+        /* Mobile landscape optimization */
+        @media (max-height: 500px) and (orientation: landscape) {
+            .panel-toggle-btn.panel-open {
+                right: 206px; /* 180px panel + 26px offset */
+            }
+        }
     </style>
 </head>
 
@@ -620,15 +780,24 @@
     <div class="main-container">
         <!-- Center Panel - Simulation -->
         <div class="center-panel">
-            <!-- <h1 class="simulation-title">Particle Life Simulator</h1> -->
             <div class="canvas-container">
                 <canvas id="webgpu-canvas"></canvas>
             </div>
         </div>
-
+        
         <!-- Right Panel - Compact Controls with Glass Effect -->
-        <div class="right-panel">
-
+        <div class="right-panel" id="right-panel">
+            <div class="panel-section">
+                <div class="keyboard-info">
+                    <strong>Shortcuts:</strong><br>
+                    <strong>SPACE</strong> - Randomize<br>
+                    <strong>N</strong> - New Config<br>
+                    <strong>P</strong> - Pause/Resume<br>
+                    <strong>R</strong> - Reset Positions<br>
+                    <strong>Ctrl+F</strong> - Fullscreen<br>
+                    <strong>TAB</strong> - Toggle Panel
+                </div>
+            </div>
             <!-- Force Parameters -->
             <div class="panel-section">
                 <h3>🎛️ Forces</h3>
@@ -664,8 +833,10 @@
                     </div>
                     <input type="range" id="collision-radius-range-slider" min="1" max="8" value="4" step="0.2">
                 </div>
-                <button id="reset-btn" class="update-forces-btn">Update Forces</button>
-                <button id="reset-force-params-btn" class="default-btn">Reset Defaults</button>
+                <div class="force-buttons-grid">
+                    <button id="reset-btn" class="update-forces-btn">Update Forces</button>
+                    <button id="reset-force-params-btn" class="default-btn">Reset Defaults</button>
+                </div>
             </div>
 
             <!-- Parameters -->
@@ -715,16 +886,15 @@
             <div class="panel-section">
                 <h3>🎮 CONTROLS</h3>
 
-                <!-- Compact 3-button grid for main controls -->
-                <div class="control-grid">
-                    <button id="start-btn" class="start-btn">▶️</button>
-                    <button id="pause-btn" class="pause-btn">⏸️</button>
-                    <!-- <button id="stop-btn" class="stop-btn">⏹️</button> -->
-                </div>
+                <!-- Single toggle button for start/pause -->
+                <button id="play-pause-btn" class="play-pause-btn">▶️</button>
 
                 <!-- Reset buttons - stacked -->
-                <button id="reset-to-original-btn" class="default-btn">Reset to Original</button>
+                <!-- <button id="reset-to-original-btn" class="default-btn">Reset to Original</button> -->
                 <button id="reset-positions-btn" class="reset-position-btn">Reset Positions</button>
+
+                <!-- Fullscreen button -->
+                <button id="fullscreen-btn" class="fullscreen-btn">🖥️ Fullscreen</button>
 
             </div>
 
@@ -732,13 +902,7 @@
             <div class="panel-section">
                 <h3>🌋 GENERATE SIM</h3>
 
-                <div class="keyboard-info">
-                    <strong>Shortcuts:</strong><br>
-                    <strong>SPACE</strong> - Randomize<br>
-                    <strong>N</strong> - New Config<br>
-                    <strong>P</strong> - Pause/Resume<br>
-                    <strong>R</strong> - Reset Positions
-                </div>
+               
 
                 <button id="randomize-btn" class="randomize-btn">Randomize Forces</button>
                 <button id="new-config-btn" class="new-config-btn">Generate Random</button>
@@ -747,10 +911,6 @@
                     <div id="config-display">Ready to generate...</div>
                 </div>
             </div>
-
-
-
-
 
             <!-- Save Configuration -->
             <div class="panel-section">
@@ -767,6 +927,9 @@
                 </div>
             </div>
         </div>
+
+        <!-- Tab Toggle Button -->
+        <button id="panel-toggle-btn" class="panel-toggle-btn">◀</button>
     </div>
 
     <!-- Load scripts in the correct order -->
@@ -774,7 +937,6 @@
     <script src="config-generator.js"></script>
     <script src="config-utils.js"></script>
     <script src="responsive-canvas-system.js"></script>
-    <!-- <script src="aspect-ratio-utils.js"></script> -->
     <script src="ui-controller.js"></script>
     <script src="simulation-manager.js"></script>
     <script src="particle-life-simulator.js"></script>

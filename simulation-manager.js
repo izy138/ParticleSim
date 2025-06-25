@@ -21,7 +21,7 @@ class SimulationManager {
      */
     async initialize() {
         try {
-            console.log("Initializing Simulation Manager with responsive support...");
+            // console.log("Initializing Simulation Manager with responsive support...");
 
             // Initialize responsive canvas system first
             this.responsiveSystem = new ResponsiveCanvasSystem();
@@ -60,7 +60,7 @@ class SimulationManager {
 
             const currentSize = this.responsiveSystem.getCurrentSize();
             console.log(`Canvas configured: ${currentSize.width}x${currentSize.height}`);
-            console.log(`Device category: ${this.responsiveSystem.getDeviceCategory()}`);
+            // console.log(`Device category: ${this.responsiveSystem.getDeviceCategory()}`);
         } else {
             // Fallback to default sizing
             this.configureFallbackCanvas();
@@ -106,7 +106,7 @@ class SimulationManager {
         if (!this.responsiveSystem) return;
 
         const deviceInfo = this.responsiveSystem.applyDeviceOptimizations();
-        console.log('Applying device optimizations:', deviceInfo);
+        // console.log('Applying device optimizations:', deviceInfo);
 
         // Adjust particle count based on screen size and device capability
         const recommendedParticles = deviceInfo.recommendedParticles;
@@ -124,21 +124,21 @@ class SimulationManager {
             }
         }
 
-        // Device-specific quality settings
-        switch (deviceInfo.category) {
-            case 'mobile':
-                console.log('Mobile device detected - consider lower particle counts and simpler effects');
-                break;
-            case 'tablet':
-                console.log('Tablet device detected - balanced settings recommended');
-                break;
-            case 'desktop':
-                console.log('Desktop device detected - full quality available');
-                break;
-            case 'large-desktop':
-                console.log('Large desktop detected - maximum quality and particle counts supported');
-                break;
-        }
+        // // Device-specific quality settings
+        // switch (deviceInfo.category) {
+        //     case 'mobile':
+        //         console.log('Mobile device detected - consider lower particle counts and simpler effects');
+        //         break;
+        //     case 'tablet':
+        //         console.log('Tablet device detected - balanced settings recommended');
+        //         break;
+        //     case 'desktop':
+        //         console.log('Desktop device detected - full quality available');
+        //         break;
+        //     case 'large-desktop':
+        //         console.log('Large desktop detected - maximum quality and particle counts supported');
+        //         break;
+        // }
 
         return deviceInfo;
     }
@@ -209,7 +209,7 @@ class SimulationManager {
     async restartWithNewConfiguration() {
         if (!this.simulator) return;
 
-        console.log("=== CREATING NEW COMPLETE CONFIGURATION ===");
+        // console.log("=== CREATING NEW COMPLETE CONFIGURATION ===");
 
         const wasRunning = this.simulator.isRunning;
         if (this.simulator.isRunning) {
@@ -219,7 +219,7 @@ class SimulationManager {
         try {
             // Get current canvas size for the new config
             const canvasInfo = this.getCanvasInfo();
-            console.log('Using canvas size for new config:', canvasInfo);
+            // console.log('Using canvas size for new config:', canvasInfo);
 
             // Generate completely new configuration with current canvas dimensions
             const numTypes = 3 + Math.floor(Math.random() * 4); // 3-6 types
@@ -233,13 +233,13 @@ class SimulationManager {
             const forceScale = 1 + Math.random() * 0.9; // 0.8-1.2 scale
             const radius = 15 + Math.random() * 10; // 15-25 radius
 
-            console.log("Generating new lava lamp configuration:", {
-                numTypes,
-                numParticles,
-                forceScale,
-                radius,
-                canvasSize: canvasInfo
-            });
+            // console.log("Generating new lava lamp configuration:", {
+            //     numTypes,
+            //     numParticles,
+            //     forceScale,
+            //     radius,
+            //     canvasSize: canvasInfo
+            // });
 
             // Generate the new configuration
             const newConfig = this.generateLavaLampConfiguration(numTypes, numParticles, forceScale, radius);
@@ -249,20 +249,20 @@ class SimulationManager {
                 newConfig.simulationSize = [canvasInfo.width, canvasInfo.height];
             }
 
-            console.log("Generated config:", {
-                particleCount: newConfig.particleCount,
-                speciesCount: newConfig.species.length,
-                simulationSize: newConfig.simulationSize
-            });
+            // console.log("Generated config:", {
+            //     particleCount: newConfig.particleCount,
+            //     speciesCount: newConfig.species.length,
+            //     simulationSize: newConfig.simulationSize
+            // });
 
             // Create brand new simulator with the generated config
             this.simulator = new ParticleLifeSimulator('webgpu-canvas', newConfig);
 
-            console.log("Initializing new simulator...");
+            // console.log("Initializing new simulator...");
             const initialized = await this.simulator.initialize();
 
             if (initialized) {
-                console.log("New simulator initialized successfully!");
+                // console.log("New simulator initialized successfully!");
 
                 // Reconnect responsive system
                 if (this.responsiveSystem) {
@@ -340,6 +340,7 @@ class SimulationManager {
 
                 this.syncSlidersWithConfig();
                 this.simulator.start();
+                this.simulator.pause(); // Start paused by default
                 this.updateButtonStates();
             } else {
                 console.error("Failed to initialize the particle simulator.");
@@ -351,42 +352,32 @@ class SimulationManager {
     }
 
     updateButtonStates() {
-        const startBtn = document.getElementById('start-btn');
-        const pauseBtn = document.getElementById('pause-btn');
+        const playPauseBtn = document.getElementById('play-pause-btn');
         const resetBtn = document.getElementById('reset-btn');
 
         if (!this.simulator) {
-            startBtn.disabled = false;
-            pauseBtn.disabled = true;
+            playPauseBtn.disabled = false;
             resetBtn.disabled = true;
-            if (pauseBtn) {
-                pauseBtn.textContent = 'Pause';
-                pauseBtn.classList.remove('paused');
-            }
+            playPauseBtn.textContent = '▶️';
+            playPauseBtn.classList.remove('paused');
             return;
         }
 
         if (!this.simulator.isRunning) {
-            startBtn.disabled = false;
-            pauseBtn.disabled = true;
+            playPauseBtn.disabled = false;
             resetBtn.disabled = false;
-            if (pauseBtn) {
-                pauseBtn.textContent = 'Pause';
-                pauseBtn.classList.remove('paused');
-            }
+            playPauseBtn.textContent = '▶️';
+            playPauseBtn.classList.remove('paused');
         } else {
-            startBtn.disabled = true;
-            pauseBtn.disabled = false;
+            playPauseBtn.disabled = false;
             resetBtn.disabled = false;
 
-            if (pauseBtn) {
-                if (this.simulator.isPaused) {
-                    pauseBtn.textContent = 'Unpause';
-                    pauseBtn.classList.add('paused');
-                } else {
-                    pauseBtn.textContent = 'Pause';
-                    pauseBtn.classList.remove('paused');
-                }
+            if (this.simulator.isPaused) {
+                playPauseBtn.textContent = '▶️';
+                playPauseBtn.classList.remove('paused');
+            } else {
+                playPauseBtn.textContent = '⏸️';
+                playPauseBtn.classList.add('paused');
             }
         }
     }
@@ -412,7 +403,7 @@ class SimulationManager {
             document.getElementById('particle-opacity-value').textContent = this.simulator.config.particleOpacity;
         }
 
-        console.log("Sliders synced with configuration");
+        // console.log("Sliders synced with configuration");
     }
 
     updateConfigDisplay(config) {
