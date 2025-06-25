@@ -340,7 +340,7 @@ class SimulationManager {
 
                 this.syncSlidersWithConfig();
                 this.simulator.start();
-                this.simulator.pause(); // Start paused by default
+                // this.simulator.pause(); // Start paused by default
                 this.updateButtonStates();
             } else {
                 console.error("Failed to initialize the particle simulator.");
