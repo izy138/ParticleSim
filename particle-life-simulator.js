@@ -5,13 +5,6 @@ class ParticleLifeSimulator {
         this.canvasId = canvasId;
         this.frameCount = 0;
         this.debugInterval = 60;
-        
-        // Performance monitoring
-        this.lastFrameTime = 0;
-        this.frameRate = 0;
-        this.frameRateHistory = [];
-        this.maxFrameRate = 60; // Limit to 60 FPS for consistency
-        this.minFrameTime = 1000 / this.maxFrameRate; // Minimum time between frames
 
         this.config = Object.assign({
             numParticles: 10000,
@@ -73,6 +66,7 @@ class ParticleLifeSimulator {
             const response = await fetch('particle-life-system.json');
             if (!response.ok) {
                 console.log("No particle-life-system.json found, using default configuration");
+                this.useDefaultConfiguration();
                 return;
             }
 
@@ -95,11 +89,52 @@ class ParticleLifeSimulator {
             this.config.colors = config.species.map(species => species.color);
             this.config.attractionMatrix = this.extractAttractionMatrix(config.species);
 
-            // console.log("Loaded configuration from particle-life-system.json");
+            console.log("Loaded configuration from particle-life-system.json");
         } catch (error) {
             console.warn("Could not load particle-life-system.json:", error.message);
-            this.config.friction = 50.0;
+            this.useDefaultConfiguration();
         }
+    }
+
+    useDefaultConfiguration() {
+        console.log("Using default configuration");
+        this.config.friction = 50.0;
+        this.config.centralForce = 0;
+        this.config.symmetricForces = false;
+        
+        // Generate default species configuration
+        this.config.species = this.generateDefaultSpecies();
+        this.config.numTypes = this.config.species.length;
+        this.config.colors = this.config.species.map(species => species.color);
+        this.config.attractionMatrix = this.extractAttractionMatrix(this.config.species);
+    }
+
+    generateDefaultSpecies() {
+        const numTypes = this.config.numTypes || 8;
+        const species = [];
+        
+        for (let i = 0; i < numTypes; i++) {
+            const hue = (i * 360 / numTypes) % 360;
+            const [r, g, b] = this.hslToRgb(hue, 0.8, 0.6);
+            
+            const forces = [];
+            for (let j = 0; j < numTypes; j++) {
+                forces.push({
+                    strength: (Math.random() * 200 - 100),
+                    radius: 5 + Math.random() * 20,
+                    collisionStrength: 200 + Math.random() * 500,
+                    collisionRadius: 0.5 + Math.random() * 3
+                });
+            }
+            
+            species.push({
+                name: `Type ${i + 1}`,
+                color: [r, g, b, 1.0],
+                forces: forces
+            });
+        }
+        
+        return species;
     }
 
     extractAttractionMatrix(species) {
@@ -331,6 +366,8 @@ class ParticleLifeSimulator {
     }
 
     updateParticleAppearance(size, opacity) {
+        if (!this.gpu || !this.gpu.device || !this.renderUniformBuffer) return;
+        
         const { device, canvas } = this.gpu;
         this.config.particleSize = size;
         this.config.particleOpacity = opacity;
@@ -347,7 +384,7 @@ class ParticleLifeSimulator {
     }
 
     updateAspectRatio() {
-        if (!this.gpu || !this.gpu.device) return;
+        if (!this.gpu || !this.gpu.device || !this.uniformBuffer) return;
 
         const canvas = this.gpu.canvas;
         const aspectRatio = canvas.width / canvas.height;
@@ -364,7 +401,11 @@ class ParticleLifeSimulator {
         ]);
 
         this.gpu.device.queue.writeBuffer(this.uniformBuffer, 0, uniformData);
-        this.updateParticleAppearance(this.config.particleSize, this.config.particleOpacity);
+        
+        // Only update particle appearance if renderUniformBuffer exists
+        if (this.renderUniformBuffer) {
+            this.updateParticleAppearance(this.config.particleSize, this.config.particleOpacity);
+        }
     }
 
     // Shader and pipeline creation methods
@@ -579,26 +620,6 @@ class ParticleLifeSimulator {
         const { device, context } = this.gpu;
 
         try {
-            // Frame rate limiting for consistent performance
-            const currentTime = performance.now();
-            const timeSinceLastFrame = currentTime - this.lastFrameTime;
-            
-            // Skip frame if we're running too fast (helps with Windows performance)
-            if (timeSinceLastFrame < this.minFrameTime) {
-                return;
-            }
-            
-            this.lastFrameTime = currentTime;
-            
-            // Calculate frame rate
-            if (timeSinceLastFrame > 0) {
-                this.frameRate = 1000 / timeSinceLastFrame;
-                this.frameRateHistory.push(this.frameRate);
-                if (this.frameRateHistory.length > 60) {
-                    this.frameRateHistory.shift();
-                }
-            }
-            
             this.frameCount++;
             const currentTexture = context.getCurrentTexture();
             const textureView = currentTexture.createView();
@@ -640,15 +661,6 @@ class ParticleLifeSimulator {
             renderPass.end();
 
             device.queue.submit([commandEncoder.finish()]);
-            
-            // Log performance every 60 frames
-            if (this.frameCount % this.debugInterval === 0) {
-                const avgFrameRate = this.frameRateHistory.reduce((a, b) => a + b, 0) / this.frameRateHistory.length;
-                console.log(`Performance: ${avgFrameRate.toFixed(1)} FPS, Particles: ${this.config.numParticles}`);
-                
-                // Adjust performance settings based on frame rate
-                this.adjustPerformanceSettings();
-            }
         } catch (error) {
             console.error("Error in render:", error);
             this.stop();
@@ -942,8 +954,6 @@ class ParticleLifeSimulator {
 
         // Recreate bind groups with new buffers
         this.createBindGroups();
-
-        console.log(`Particle count updated to ${newCount}`);
     }
 
     updateFriction(frictionHalfLife) {
@@ -952,7 +962,7 @@ class ParticleLifeSimulator {
         this.config.friction = frictionHalfLife;
         const dt = 0.0023;
         const friction = Math.exp(-Math.log(2) * dt / frictionHalfLife);
-        w
+        
         // Get current aspect ratio from canvas
         const aspectRatio = this.gpu.canvas.width / this.gpu.canvas.height;
 
@@ -973,10 +983,11 @@ class ParticleLifeSimulator {
 
     async applyNewConfiguration(newConfig) {
         try {
-            console.log("Applying new configuration with aspect ratio support...");
+            console.log("Applying new configuration with aspect ratio support...", newConfig);
 
             // Update particle count if changed
             if (newConfig.particleCount !== this.config.numParticles) {
+                console.log(`Particle count change detected: ${this.config.numParticles} → ${newConfig.particleCount}`);
                 await this.updateParticleCount(newConfig.particleCount);
             }
 
@@ -1033,27 +1044,6 @@ class ParticleLifeSimulator {
             console.log("Original forces restored!");
         } else {
             console.log("No original forces stored to restore");
-        }
-    }
-
-    // Performance optimization methods
-    adjustPerformanceSettings() {
-        if (this.frameRateHistory.length < 10) return;
-        
-        const avgFrameRate = this.frameRateHistory.reduce((a, b) => a + b, 0) / this.frameRateHistory.length;
-        
-        // If frame rate is consistently low, reduce particle count or adjust settings
-        if (avgFrameRate < 30 && this.config.numParticles > 5000) {
-            const newParticleCount = Math.max(5000, Math.floor(this.config.numParticles * 0.9));
-            console.log(`Low frame rate detected (${avgFrameRate.toFixed(1)} FPS). Reducing particles from ${this.config.numParticles} to ${newParticleCount}`);
-            this.updateParticleCount(newParticleCount);
-        }
-        
-        // If frame rate is very high, we can increase particle count
-        if (avgFrameRate > 55 && this.config.numParticles < 15000) {
-            const newParticleCount = Math.min(15000, Math.floor(this.config.numParticles * 1.1));
-            console.log(`High frame rate detected (${avgFrameRate.toFixed(1)} FPS). Increasing particles from ${this.config.numParticles} to ${newParticleCount}`);
-            this.updateParticleCount(newParticleCount);
         }
     }
 
