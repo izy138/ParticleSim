@@ -35,32 +35,37 @@ class UIController {
         // Configuration buttons
         document.getElementById('randomize-btn').addEventListener('click', () => this.randomizeForces());
         document.getElementById('new-config-btn').addEventListener('click', () => this.createNewConfiguration());
+        document.getElementById('create-custom-sim-btn').addEventListener('click', () => this.createCustomSimulation());
 
         // Save/load buttons
         document.getElementById('save-config-btn').addEventListener('click', () => this.saveConfiguration());
-        document.getElementById('copy-config-btn').addEventListener('click', () => this.copyConfiguration());
+        document.getElementById('load-config-btn').addEventListener('click', () => this.loadConfiguration());
+        document.getElementById('config-file-input').addEventListener('change', (event) => this.handleFileSelect(event));
 
         // Listen for fullscreen changes (e.g., user presses Escape)
         document.addEventListener('fullscreenchange', () => {
             const mainContainer = document.querySelector('.main-container');
             const fullscreenBtn = document.getElementById('fullscreen-btn');
-            
+
             if (!document.fullscreenElement) {
                 // Fullscreen was exited (by any means)
                 mainContainer.classList.remove('fullscreen');
                 fullscreenBtn.classList.remove('fullscreen');
                 fullscreenBtn.textContent = '🖥️ Fullscreen';
-                
+
                 // Force recalculation of normal canvas size
                 setTimeout(() => {
                     if (this.simulationManager.responsiveSystem) {
                         this.simulationManager.responsiveSystem.applyCanvasSize(null);
                     }
                 }, 100);
-                
+
                 console.log('Fullscreen exited (external)');
             }
         });
+
+        // Setup drag and drop for configuration files
+        this.setupDragAndDrop();
     }
 
     setupSliders() {
@@ -69,6 +74,7 @@ class UIController {
         this.setupForceScaleSlider();
         this.setupParticleAppearanceSliders();
         this.setupForceParameterSliders();
+        this.setupGenerationSliders();
     }
 
     setupFrictionSlider() {
@@ -224,6 +230,42 @@ class UIController {
         }
     }
 
+    setupGenerationSliders() {
+        // Particle Types Slider
+        const particleTypesSlider = document.getElementById('particle-types-slider');
+        if (particleTypesSlider) {
+            particleTypesSlider.addEventListener('input', () => {
+                const value = particleTypesSlider.value;
+                document.getElementById('particle-types-value').textContent = value;
+            });
+        }
+
+        // Total Particles Slider
+        const totalParticlesSlider = document.getElementById('total-particles-slider');
+        if (totalParticlesSlider) {
+            totalParticlesSlider.addEventListener('input', () => {
+                const value = totalParticlesSlider.value;
+                document.getElementById('total-particles-value').textContent = value;
+            });
+        }
+
+        // Central Force Checkbox
+        const centralForceCheckbox = document.getElementById('central-force-checkbox');
+        if (centralForceCheckbox) {
+            centralForceCheckbox.addEventListener('change', () => {
+                // No need to update display for checkbox
+            });
+        }
+
+        // Looping Borders Checkbox
+        const loopingBordersCheckbox = document.getElementById('looping-borders-checkbox');
+        if (loopingBordersCheckbox) {
+            loopingBordersCheckbox.addEventListener('change', () => {
+                // No need to update display for checkbox
+            });
+        }
+    }
+
     setupKeyboardControls() {
         let isProcessing = false;
 
@@ -231,7 +273,7 @@ class UIController {
             if (isProcessing) return; // Prevent rapid-fire key presses
 
             // Prevent default for handled keys
-            if (['Space', 'KeyP', 'KeyR', 'KeyF', 'KeyN'].includes(event.code)) {
+            if (['Space', 'KeyP', 'KeyR', 'KeyF', 'KeyN', 'KeyL'].includes(event.code)) {
                 event.preventDefault();
             }
 
@@ -264,7 +306,7 @@ class UIController {
 
                 switch (event.code) {
                     case 'Space':
-                        showFeedback('🎲 Randomizing Forces...', '#FF9800');
+                        // showFeedback('🎲 Randomizing Forces...', '#FF9800');
                         await this.randomizeForces();
                         break;
                     // case 'KeyG':
@@ -272,33 +314,40 @@ class UIController {
                     //     await this.simulationManager.restartWithNewConfiguration();
                     //     break;
                     case 'KeyN':
-                        showFeedback('✨ Creating New Complete Config...', '#9C27B0');
+                        // showFeedback('✨ Creating New Complete Config...', '#9C27B0');
                         await this.createNewConfiguration();
                         break;
                     case 'KeyP':
                         if (this.simulator) {
                             this.togglePlayPause();
-                            showFeedback(this.simulator.isPaused ? '⏸️ Paused' : '▶️ Resumed', '#2196F3');
+                            // showFeedback(this.simulator.isPaused ? '⏸️ Paused' : '▶️ Resumed', '#2196F3');
                         }
                         break;
                     case 'KeyR':
                         if (this.simulator) {
                             this.simulator.reset();
                             this.updateButtonStates();
-                            showFeedback('🔄 Reset', '#2196F3');
+                            // showFeedback('🔄 Reset', '#2196F3');
                         }
                         break;
                     case 'KeyF':
                         if (event.ctrlKey) {
                             event.preventDefault();
                             this.toggleFullscreen();
-                            showFeedback('🖥️ Fullscreen Toggled', '#9C27B0');
+                            // showFeedback('🖥️ Fullscreen Toggled', '#9C27B0');
+                        }
+                        break;
+                    case 'KeyL':
+                        if (event.ctrlKey) {
+                            event.preventDefault();
+                            this.loadConfiguration();
+                            // showFeedback('📁 Loading Configuration...', '#FF9800');
                         }
                         break;
                     case 'Tab':
                         event.preventDefault();
                         this.togglePanel();
-                        showFeedback('📋 Panel Toggled', '#FF9800');
+                        // showFeedback('📋 Panel Toggled', '#FF9800');
                         break;
                 }
             } catch (error) {
@@ -362,16 +411,26 @@ class UIController {
             `${config.simulationSize[0]}×${config.simulationSize[1]}` :
             'Unknown';
 
+        // Get custom parameters from sliders
+        const centralForce = document.getElementById('central-force-checkbox')?.checked ? 'Yes' : 'No';
+        const loopingBorders = document.getElementById('looping-borders-checkbox')?.checked ? 'Yes' : 'No';
+        const particleTypes = document.getElementById('particle-types-slider')?.value || config.species.length;
+        const totalParticles = document.getElementById('total-particles-slider')?.value || config.particleCount;
+        const forceScale = document.getElementById('force-scale-slider')?.value || '1.0';
+
         display.innerHTML = `
             <strong>Current Configuration:</strong><br>
-            • Particle Types: ${config.species.length}<br>
-            • Total Particles: ${config.particleCount.toLocaleString()}<br>
+            • Particle Types: ${config.species.length} (max: ${particleTypes})<br>
+            • Total Particles: ${config.particleCount.toLocaleString()} (max: ${totalParticles})<br>
             • Canvas Size: ${canvasInfo}<br>
             • Aspect Ratio: ${aspectRatio}:1<br>
             • Particle Size: ${config.particleSize}<br>
             • Antisocial Types: ${antisocialCount}<br>
             • Force Balance: ${attractiveForces} attractive, ${repulsiveForces} repulsive<br>
             • Friction: ${config.friction}<br>
+            • Force Scale: ${forceScale}<br>
+            • Central Force: ${centralForce}<br>
+            • Looping Borders: ${loopingBorders === '1' ? 'Yes' : 'No'}<br>
             • Last Updated: ${new Date().toLocaleTimeString()}
         `;
     }
@@ -395,6 +454,37 @@ class UIController {
         if (opacitySlider) {
             opacitySlider.value = this.simulator.config.particleOpacity;
             document.getElementById('particle-opacity-value').textContent = this.simulator.config.particleOpacity;
+        }
+
+        // Sync force scale slider
+        const forceScaleSlider = document.getElementById('force-scale-slider');
+        if (forceScaleSlider) {
+            // Default to 1.0 if not set in config
+            forceScaleSlider.value = this.simulator.config.forceScale || 1.0;
+            document.getElementById('force-scale-value').textContent = forceScaleSlider.value;
+        }
+
+        // Sync generation sliders
+        const particleTypesSlider = document.getElementById('particle-types-slider');
+        if (particleTypesSlider) {
+            particleTypesSlider.value = this.simulator.config.species?.length || 5;
+            document.getElementById('particle-types-value').textContent = particleTypesSlider.value;
+        }
+
+        const totalParticlesSlider = document.getElementById('total-particles-slider');
+        if (totalParticlesSlider) {
+            totalParticlesSlider.value = this.simulator.config.particleCount || 12000;
+            document.getElementById('total-particles-value').textContent = totalParticlesSlider.value;
+        }
+
+        const centralForceSlider = document.getElementById('central-force-checkbox');
+        if (centralForceSlider) {
+            centralForceSlider.checked = this.simulator.config.centralForce ? true : false;
+        }
+
+        const loopingBordersSlider = document.getElementById('looping-borders-checkbox');
+        if (loopingBordersSlider) {
+            loopingBordersSlider.checked = this.simulator.config.loopingBorders ? true : false;
         }
 
         // console.log("Sliders synced with configuration");
@@ -436,21 +526,21 @@ class UIController {
     toggleFullscreen() {
         const mainContainer = document.querySelector('.main-container');
         const fullscreenBtn = document.getElementById('fullscreen-btn');
-        
+
         if (!document.fullscreenElement) {
             // Enter fullscreen
             mainContainer.requestFullscreen().then(() => {
                 mainContainer.classList.add('fullscreen');
                 fullscreenBtn.classList.add('fullscreen');
                 fullscreenBtn.textContent = '🖥️ Exit Fullscreen';
-                
+
                 // Resize canvas after fullscreen
                 setTimeout(() => {
                     if (this.simulationManager.responsiveSystem) {
                         this.simulationManager.responsiveSystem.applyCanvasSize();
                     }
                 }, 100);
-                
+
                 console.log('Entered fullscreen mode');
             }).catch(err => {
                 console.error('Error entering fullscreen:', err);
@@ -461,7 +551,7 @@ class UIController {
                 mainContainer.classList.remove('fullscreen');
                 fullscreenBtn.classList.remove('fullscreen');
                 fullscreenBtn.textContent = '🖥️ Fullscreen';
-                
+
                 // Force recalculation of normal canvas size after fullscreen exit
                 setTimeout(() => {
                     if (this.simulationManager.responsiveSystem) {
@@ -469,7 +559,7 @@ class UIController {
                         this.simulationManager.responsiveSystem.applyCanvasSize(null);
                     }
                 }, 100);
-                
+
                 console.log('Exited fullscreen mode');
             }).catch(err => {
                 console.error('Error exiting fullscreen:', err);
@@ -546,6 +636,23 @@ class UIController {
 
             try {
                 await this.simulationManager.randomizeForces();
+                
+                // Update the force parameter sliders to reflect the values used for randomization
+                const radiusSlider = document.getElementById('radius-range-slider');
+                const collisionRadiusSlider = document.getElementById('collision-radius-range-slider');
+                
+                if (radiusSlider) {
+                    radiusSlider.value = 22; // Specific value used for randomization
+                    document.getElementById('radius-range-value').textContent = '22';
+                    this.forceParams.radiusRange = 22;
+                }
+                
+                if (collisionRadiusSlider) {
+                    collisionRadiusSlider.value = 5.5; // Specific value used for randomization
+                    document.getElementById('collision-radius-range-value').textContent = '5.5';
+                    this.forceParams.collisionRadiusRange = 5.5;
+                }
+                
                 randomizeBtn.textContent = '✓ Randomized!';
                 setTimeout(() => {
                     randomizeBtn.textContent = 'Randomize Forces';
@@ -584,12 +691,97 @@ class UIController {
         }
     }
 
+    async createCustomSimulation() {
+        const customSimBtn = document.getElementById('create-custom-sim-btn');
+        if (customSimBtn) {
+            customSimBtn.disabled = true;
+            customSimBtn.textContent = 'Creating Custom...';
+
+            try {
+                await this.simulationManager.createCustomSimulation();
+                customSimBtn.textContent = '✓ Custom Created!';
+                setTimeout(() => {
+                    customSimBtn.textContent = 'Create Custom Sim';
+                    customSimBtn.disabled = false;
+                }, 1000);
+            } catch (error) {
+                customSimBtn.textContent = '✗ Error';
+                setTimeout(() => {
+                    customSimBtn.textContent = 'Create Custom Sim';
+                    customSimBtn.disabled = false;
+                }, 2000);
+            }
+        }
+    }
+
     saveConfiguration() {
         ConfigUtils.saveCurrentConfiguration(this.simulator);
     }
 
-    copyConfiguration() {
-        ConfigUtils.copyConfigurationToClipboard(this.simulator);
+    loadConfiguration() {
+        // Trigger the hidden file input
+        document.getElementById('config-file-input').click();
+    }
+
+    async handleFileSelect(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        try {
+            // Show loading state
+            const loadBtn = document.getElementById('load-config-btn');
+            const originalText = loadBtn.textContent;
+            loadBtn.disabled = true;
+            loadBtn.textContent = 'Loading...';
+
+            // Load the configuration
+            const config = await ConfigUtils.loadConfigurationFromFile(file);
+            
+            // Check if type count is changing
+            const currentTypes = this.simulator?.config?.numTypes || 0;
+            const newTypes = config.species.length;
+            
+            if (currentTypes !== newTypes) {
+                loadBtn.textContent = 'Restarting...';
+            }
+            
+            // Apply the loaded configuration
+            await this.simulationManager.loadConfiguration(config);
+            
+            // Show success feedback
+            loadBtn.textContent = '✓ Loaded!';
+            setTimeout(() => {
+                loadBtn.textContent = originalText;
+                loadBtn.disabled = false;
+            }, 2000);
+
+            // Clear the file input
+            event.target.value = '';
+
+        } catch (error) {
+            console.error('Error loading configuration:', error);
+            
+            // Show error feedback
+            const loadBtn = document.getElementById('load-config-btn');
+            loadBtn.textContent = '✗ Error';
+            setTimeout(() => {
+                loadBtn.textContent = 'Load';
+                loadBtn.disabled = false;
+            }, 2000);
+
+            // Show error message
+            const display = document.getElementById('config-display');
+            if (display) {
+                const originalText = display.innerHTML;
+                display.innerHTML = `<strong style="color: red;">✗ Load failed: ${error.message}</strong>`;
+                setTimeout(() => {
+                    display.innerHTML = originalText;
+                }, 5000);
+            }
+
+            // Clear the file input
+            event.target.value = '';
+        }
     }
 
     updateFriction(value) {
@@ -668,10 +860,10 @@ class UIController {
     togglePanel() {
         const rightPanel = document.getElementById('right-panel');
         const toggleBtn = document.getElementById('panel-toggle-btn');
-        
+
         // Toggle panel state in responsive system
         this.simulationManager.responsiveSystem.togglePanel();
-        
+
         // Update UI classes
         if (this.simulationManager.responsiveSystem.panelOpen) {
             rightPanel.classList.remove('panel-closed');
@@ -686,14 +878,14 @@ class UIController {
             toggleBtn.classList.add('panel-closed');
             toggleBtn.textContent = '◀';
         }
-        
+
         console.log('Panel toggled:', this.simulationManager.responsiveSystem.panelOpen ? 'open' : 'closed');
     }
 
     initializePanelState() {
         const rightPanel = document.getElementById('right-panel');
         const toggleBtn = document.getElementById('panel-toggle-btn');
-        
+
         if (this.simulationManager.responsiveSystem.panelOpen) {
             rightPanel.classList.remove('panel-closed');
             rightPanel.classList.add('panel-open');
@@ -707,6 +899,96 @@ class UIController {
             toggleBtn.classList.add('panel-closed');
             toggleBtn.textContent = '◀';
         }
+    }
+
+    // Setup drag and drop for configuration files
+    setupDragAndDrop() {
+        const mainContainer = document.getElementById('main-container');
+        
+        if (!mainContainer) return;
+
+        // Prevent default drag behaviors
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            mainContainer.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+            });
+        });
+
+        // Handle drag enter and over
+        ['dragenter', 'dragover'].forEach(eventName => {
+            mainContainer.addEventListener(eventName, () => {
+                mainContainer.classList.add('drag-over');
+            });
+        });
+
+        // Handle drag leave
+        mainContainer.addEventListener('dragleave', () => {
+            mainContainer.classList.remove('drag-over');
+        });
+
+        // Handle drop
+        mainContainer.addEventListener('drop', async (e) => {
+            mainContainer.classList.remove('drag-over');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const file = files[0];
+                
+                // Check if it's a JSON file
+                if (file.type === 'application/json' || file.name.endsWith('.json')) {
+                    try {
+                        // Show loading feedback
+                        const display = document.getElementById('config-display');
+                        if (display) {
+                            const originalText = display.innerHTML;
+                            display.innerHTML = `<strong style="color: blue;">📁 Loading ${file.name}...</strong>`;
+                            
+                            // Load the configuration
+                            const config = await ConfigUtils.loadConfigurationFromFile(file);
+                            
+                            // Check if type count is changing
+                            const currentTypes = this.simulator?.config?.numTypes || 0;
+                            const newTypes = config.species.length;
+                            
+                            if (currentTypes !== newTypes) {
+                                display.innerHTML = `<strong style="color: blue;">🔄 Restarting simulator for ${newTypes} particle types...</strong>`;
+                            }
+                            
+                            await this.simulationManager.loadConfiguration(config);
+                            
+                            // Show success feedback
+                            display.innerHTML = `<strong style="color: green;">✓ Loaded ${file.name} successfully!</strong>`;
+                            setTimeout(() => {
+                                display.innerHTML = originalText;
+                            }, 3000);
+                        }
+                    } catch (error) {
+                        console.error('Error loading dropped file:', error);
+                        
+                        // Show error feedback
+                        const display = document.getElementById('config-display');
+                        if (display) {
+                            const originalText = display.innerHTML;
+                            display.innerHTML = `<strong style="color: red;">✗ Failed to load ${file.name}: ${error.message}</strong>`;
+                            setTimeout(() => {
+                                display.innerHTML = originalText;
+                            }, 5000);
+                        }
+                    }
+                } else {
+                    // Show error for non-JSON files
+                    const display = document.getElementById('config-display');
+                    if (display) {
+                        const originalText = display.innerHTML;
+                        display.innerHTML = `<strong style="color: red;">✗ Please drop a JSON configuration file</strong>`;
+                        setTimeout(() => {
+                            display.innerHTML = originalText;
+                        }, 3000);
+                    }
+                }
+            }
+        });
     }
 }
 

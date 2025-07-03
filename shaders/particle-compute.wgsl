@@ -95,17 +95,113 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         var centralForceContrib = centerDirection * centralForceStrength;
         centralForceContrib.x = centralForceContrib.x / params.aspectRatio;
         force += centralForceContrib;
+
     }
 
+
+   // ADD THIS AFTER CENTRAL FORCE SECTION, BEFORE VELOCITY INTEGRATION
+    
+    // Corner escape force - prevents particles from getting stuck in corners
+    // Only activate when particle is very close to BOTH walls (actual corner region)
+    let corner_threshold = 0.025; // Distance from walls to consider "in corner"
+    
+    // Check if particle is in corner region (close to both X and Y walls)
+    let in_corner_region = (abs(pos.x) > (1.0 - corner_threshold)) && (abs(pos.y) > (1.0 - corner_threshold));
+
+    if (in_corner_region) {
+        var escape_dir = vec2<f32>(0.0, 0.0);
+        
+        // Determine escape direction based on which corner the particle is in
+        if (pos.x > 0.0 && pos.y > 0.0) {
+            escape_dir = vec2<f32>(-1.0, -1.0); // Top-right corner
+        } else if (pos.x < 0.0 && pos.y > 0.0) {
+            escape_dir = vec2<f32>(1.0, -1.0);  // Top-left corner
+        } else if (pos.x > 0.0 && pos.y < 0.0) {
+            escape_dir = vec2<f32>(-1.0, 1.0);  // Bottom-right corner
+        } else {
+            escape_dir = vec2<f32>(1.0, 1.0);   // Bottom-left corner
+        }
+        
+        // Count nearby particles to detect clusters
+        var nearby_particles = 0u;
+        for (var j = 0u; j < numParticles; j++) {
+            if (j == idx) { continue; }
+            let jBase = j * 5u;
+            let pos_j = vec2<f32>(particlesIn[jBase], particlesIn[jBase + 1u]);
+            let dist_to_j = length(pos - pos_j);
+            if (dist_to_j < 0.1) { // Count particles within 0.1 units
+                nearby_particles += 1u;
+            }
+        }
+        
+        // Strong repulsion force that increases as particle gets closer to corner
+        let distance_from_center = length(pos);
+        let base_escape_strength = 7.0 * (distance_from_center - 0.80); // Stronger when farther from center
+        
+        // Escalate force based on cluster size
+        let cluster_multiplier = 1.0 + f32(nearby_particles) * 2.0; // 2x per nearby particle
+        let escape_strength = base_escape_strength * cluster_multiplier;
+        
+        // Limit maximum force to prevent excessive acceleration
+        let max_escape_strength = 7.0; // Cap the maximum force
+        let clamped_escape_strength = min(escape_strength, max_escape_strength);
+        
+        // For large clusters (20+ particles), add opposite direction force
+        if (nearby_particles >= 20u) {
+            // Apply force in the complete opposite direction (toward center)
+            let opposite_dir = normalize(-pos); // Direction toward center
+            let opposite_strength = 1.0 * f32(nearby_particles); // Stronger for bigger clusters
+            var opposite_force = opposite_dir * opposite_strength;
+            
+            // Apply aspect ratio correction
+            opposite_force.x = opposite_force.x * params.aspectRatio;
+            opposite_force.x = opposite_force.x / params.aspectRatio;
+            
+            force = force + opposite_force;
+        }
+        
+        // Much more reasonable force magnitude
+        let base_force_magnitude = 0.99; // Reduced from 2000 to 0.05
+        let escape_force_magnitude = base_force_magnitude * clamped_escape_strength;
+        
+        // Apply aspect ratio correction
+        escape_dir.x = escape_dir.x * params.aspectRatio;
+        let escape_dir_len = length(escape_dir);
+        if (escape_dir_len > 0.001) {
+            escape_dir = escape_dir / escape_dir_len;
+        }
+        
+        var corner_force = escape_dir * escape_force_magnitude;
+        corner_force.x = corner_force.x / params.aspectRatio;
+        
+        // Enhanced velocity damping to prevent excessive acceleration
+        // If particle is already moving away from corner, significantly reduce the force
+        let velocity_away_from_corner = dot(vel, -corner_force);
+        if (velocity_away_from_corner > 0.0) {
+            // Particle is already moving away, reduce force more aggressively
+            let damping_factor = max(0.05, 1.0 - velocity_away_from_corner * 5.0);
+            corner_force = corner_force * damping_factor;
+        }
+        
+        // Additional damping based on current velocity magnitude
+        let current_speed = length(vel);
+        if (current_speed > 0.5) { // If particle is already moving fast
+            let speed_damping = max(11, 1.0 - current_speed * 0.5);
+            corner_force = corner_force * speed_damping;
+        }
+        
+        force = force + corner_force;
+    }
+    
     // Integrate velocity
     var newVel = vel + force * params.dt;
     newVel *= params.friction;
 
     var newPos = pos + newVel * params.dt;
     
-    // FIXED: Apply aspect ratio correction to wall bounds
-    let boundX = 1.0;
-    let boundY = 1.0;
+    // FIXED: Apply aspect ratio correction to wall bounds with margin to prevent clipping
+    let boundX = 0.997;  // Reduced from 1.0 to prevent edge clipping
+    let boundY = 0.994;  // Reduced from 1.0 to prevent edge clipping
 
     if (newPos.x < -boundX) {
         newPos.x = -boundX;

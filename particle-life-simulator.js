@@ -8,7 +8,7 @@ class ParticleLifeSimulator {
 
         this.config = Object.assign({
             numParticles: 10000,
-            numTypes: 6,
+            numTypes: 8,
             particleSize: 0.007,
             particleOpacity: 0.75
         }, config);
@@ -205,7 +205,7 @@ class ParticleLifeSimulator {
         const { device, canvas } = this.gpu;
         const aspectRatio = canvas.width / canvas.height;
         const frictionHalfLife = this.config.friction * 0.001;
-        const dt = 0.002;
+        const dt = 0.0025;
         const friction = Math.exp(-Math.log(2) * dt / frictionHalfLife);
 
         const uniformData = new Float32Array([
@@ -667,6 +667,13 @@ class ParticleLifeSimulator {
         this.config.radiusMatrix = radiusMatrix;
         this.config.collisionStrengthMatrix = collisionStrengthMatrix;
         this.config.collisionRadiusMatrix = collisionRadiusMatrix;
+
+        // Update particle appearance if provided in the new config
+        if (newConfig.particleSize !== undefined || newConfig.particleOpacity !== undefined) {
+            const size = newConfig.particleSize !== undefined ? newConfig.particleSize : this.config.particleSize || 0.007;
+            const opacity = newConfig.particleOpacity !== undefined ? newConfig.particleOpacity : this.config.particleOpacity || 0.75;
+            this.updateParticleAppearance(size, opacity);
+        }
     }
 
     async randomizeForces(params = null) {
@@ -679,7 +686,8 @@ class ParticleLifeSimulator {
             strengthModifier: 110,
             radiusRange: 25,
             collisionStrengthRange: 750,
-            collisionRadiusRange: 4
+            collisionRadiusRange: 4,
+            forceScale: 1.0
         };
 
         const numTypes = this.config.numTypes;
@@ -687,7 +695,7 @@ class ParticleLifeSimulator {
 
         for (let i = 0; i < numTypes; i++) {
             for (let j = 0; j < numTypes; j++) {
-                const strength = (Math.random() * 200 - forceParams.strengthModifier);
+                const strength = (Math.random() * 200 - forceParams.strengthModifier) * forceParams.forceScale;
                 const radius = 5 + Math.random() * forceParams.radiusRange;
                 const collisionStrength = 200 + Math.random() * forceParams.collisionStrengthRange;
                 const collisionRadius = 0.5 + Math.random() * forceParams.collisionRadiusRange;
@@ -706,7 +714,9 @@ class ParticleLifeSimulator {
             species: newSpecies,
             friction: this.config.friction,
             centralForce: this.config.centralForce,
-            symmetricForces: false
+            symmetricForces: false,
+            particleSize: parseFloat(document.getElementById('particle-size-slider')?.value) || 0.007,
+            particleOpacity: parseFloat(document.getElementById('particle-opacity-slider')?.value) || 0.75
         };
 
         await this.updateForceMatrices(newConfig);
@@ -727,7 +737,9 @@ class ParticleLifeSimulator {
                 species: newConfig.species,
                 friction: parseFloat(newConfig.friction),
                 centralForce: newConfig.centralForce,
-                colors: newConfig.species?.map(s => s.color) || this.config.colors
+                colors: newConfig.species?.map(s => s.color) || this.config.colors,
+                particleSize: newConfig.particleSize !== undefined ? newConfig.particleSize : this.config.particleSize || 0.007,
+                particleOpacity: newConfig.particleOpacity !== undefined ? newConfig.particleOpacity : this.config.particleOpacity || 0.75
             });
         }
 
@@ -770,6 +782,9 @@ class ParticleLifeSimulator {
             collisionRadiusRange: 4
         };
 
+        // Get current force scale from UI
+        const forceScale = parseFloat(document.getElementById('force-scale-slider')?.value) || 1.0;
+
         const strengthScale = forceParams.strengthModifier / defaults.strengthModifier;
         const radiusScale = forceParams.radiusRange / defaults.radiusRange;
         const collisionStrengthScale = forceParams.collisionStrengthRange / defaults.collisionStrengthRange;
@@ -781,7 +796,7 @@ class ParticleLifeSimulator {
             for (let j = 0; j < numTypes; j++) {
                 const baselineForce = sourceForces[i].forces[j];
                 modifiedSpecies[i].forces[j] = {
-                    strength: baselineForce.strength * strengthScale,
+                    strength: baselineForce.strength * strengthScale * forceScale,
                     radius: baselineForce.radius * radiusScale,
                     collisionStrength: baselineForce.collisionStrength * collisionStrengthScale,
                     collisionRadius: baselineForce.collisionRadius * collisionRadiusScale
@@ -901,7 +916,7 @@ class ParticleLifeSimulator {
         this.config.friction = frictionHalfLife;
         const dt = 0.0023;
         const friction = Math.exp(-Math.log(2) * dt / frictionHalfLife);
-w
+        w
         // Get current aspect ratio from canvas
         const aspectRatio = this.gpu.canvas.width / this.gpu.canvas.height;
 
@@ -935,6 +950,15 @@ w
             // Update other properties
             this.config.friction = parseFloat(newConfig.friction);
             this.config.centralForce = newConfig.centralForce;
+
+            // Update particle appearance if provided
+            if (newConfig.particleSize !== undefined || newConfig.particleOpacity !== undefined) {
+                const size = newConfig.particleSize !== undefined ? newConfig.particleSize : this.config.particleSize || 0.007;
+                const opacity = newConfig.particleOpacity !== undefined ? newConfig.particleOpacity : this.config.particleOpacity || 0.75;
+                this.config.particleSize = size;
+                this.config.particleOpacity = opacity;
+                this.updateParticleAppearance(size, opacity);
+            }
 
             // Update uniform buffer with new friction AND current aspect ratio
             const aspectRatio = this.gpu.canvas.width / this.gpu.canvas.height;

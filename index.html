@@ -89,6 +89,11 @@
             border-radius: 7px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
             padding: 12px;
+            /* padding-left: 12px; */
+            padding-right: 11px;
+            /* padding-top: 12px; */
+            /* padding-bottom: 12px; */
+         
             max-height: calc(100vh - 27px);
             overflow-y: auto;
 
@@ -140,8 +145,8 @@
         }
 
         .control-grid button {
-            padding: 8px 4px;
-            font-size: 11px;
+            padding: 6px 4px;
+            font-size: 10px;
             margin-bottom: 0;
             border-radius: 4px;
             font-weight: 600;
@@ -167,7 +172,7 @@
         button {
             width: 100%;
             padding: 6px 8px;
-            border: none;
+            border: 3px solid rgba(0, 0, 0, 0.2);
             border-radius: 5px;
             color: rgb(0, 0, 0);
             cursor: pointer;
@@ -217,23 +222,23 @@
 
         /* Play/Pause Toggle Button */
         .play-pause-btn {
-            background: rgba(40, 167, 69, 0.8);
+            background: rgba(96, 230, 128, 0.8);
             width: 100%;
-            padding: 8px 4px;
-            font-size: 14px;
+            padding: 6px 4px;
+            font-size: 10px;
             margin-bottom: 4px;
         }
 
         .play-pause-btn:hover {
-            background: rgba(33, 136, 56, 0.9);
+            background: rgba(141, 255, 166, 0.9);
         }
 
         .play-pause-btn.paused {
-            background: rgba(255, 184, 126, 0.8);
+            background: rgba(223, 223, 223, 0.8);
         }
 
         .play-pause-btn.paused:hover {
-            background: rgba(217, 158, 119, 0.9);
+            background: rgba(194, 194, 194, 0.9);
         }
 
         /* .stop-btn {
@@ -261,27 +266,33 @@
             background: rgba(33, 136, 56, 0.9);
         } */
         .reset-position-btn {
-            background: rgba(83, 186, 134, 0.8);
+            background: #78b36de6;
+            padding: 6px 4px;
+            font-size: 10px;
+        }
+
+        .reset-position-btn:hover {
+            background: #69a15fe6;
         }
 
         .randomize-btn {
-            background: rgba(132, 243, 255, 0.8);
+            background: #a1e5afe6;
         }
 
         .randomize-btn:hover {
-            background: rgba(79, 201, 209, 0.9);
+            background: #98d9a5e6;
         }
 
         .new-config-btn {
-            background: rgba(76, 210, 129, 0.8);
+            background: #a1e5afe6;
         }
 
         .new-config-btn:hover {
-            background: rgba(72, 194, 121, 0.8);
+            background: #98d9a5e6;
         }
 
         .save-btn {
-            background: rgba(32, 201, 151, 0.8);
+            background: rgba(41, 205, 255, 0.8);
         }
 
         .save-btn:hover {
@@ -294,6 +305,14 @@
 
         .copy-btn:hover {
             background: rgba(19, 132, 150, 0.9);
+        }
+
+        .load-btn {
+            background: rgba(102, 143, 255, 0.8);
+        }
+
+        .load-btn:hover {
+            background: rgba(230, 174, 6, 0.9);
         }
 
         .default-btn {
@@ -390,7 +409,7 @@
             border: 1px solid rgba(255, 234, 167, 0.3);
             padding: 6px;
             border-radius: 4px;
-            margin: 6px 0;
+            margin: 4.5px 0;
             font-size: 14px;
             line-height: 1.3;
             color: #000000;
@@ -489,15 +508,15 @@
         @media (max-width: 1400px) {
             .right-panel {
                 /* width: 180px; - removed to keep consistent width */
-        /*
+                /*
             }
-        } */
+        } */ 
 
         /* @media (max-width: 1200px) {
             .right-panel {
                 /* width: 160px; - removed to keep consistent width */
-        /* padding: 10px; - removed to keep consistent padding */
-        /*  }
+                /* padding: 10px; - removed to keep consistent padding */
+          /*  }
 
             .simulation-title {
                 font-size: 18px;
@@ -553,12 +572,12 @@
 
         /* Large screen optimizations */
         @media (min-width: 1920px) {
-
             /* .right-panel {
                 /* width: 220px; - removed to keep consistent width */
-            /* padding: 16px; - removed to keep consistent padding */
-            /* } */
-            */ .simulation-title {
+                /* padding: 16px; - removed to keep consistent padding */
+            /* } */ */
+
+            .simulation-title {
                 font-size: 22px;
             }
         }
@@ -711,14 +730,13 @@
             align-items: center;
             justify-content: center;
         }
-
-        /* Add border to the arrow text
+            /* Add border to the arrow text
             text-shadow: 
                 -1px 0px 0 rgba(255, 255, 255, 0.4),
                 2px 0.5px 0 rgba(255, 255, 255, 0.4),
                 /* -1px 1px 0 rgba(255, 255, 255, 0.4), */
-        /* 2px -1px 0 rgba(255, 255, 255, 0.4);
-        } */
+                /* 2px -1px 0 rgba(255, 255, 255, 0.4);
+        } */ 
 
         .panel-toggle-btn:hover {
             background: rgba(255, 255, 255, 0.4);
@@ -731,8 +749,7 @@
         }
 
         .panel-toggle-btn.panel-open {
-            right: 206px;
-            /* Default for 180px panel + 26px offset */
+            right: 206px; /* Default for 180px panel + 26px offset */
             width: 20px;
             z-index: 1002;
         }
@@ -740,61 +757,116 @@
         /* Responsive breakpoints for panel toggle button */
         @media (max-width: 1400px) {
             .panel-toggle-btn.panel-open {
-                right: 206px;
-                /* 180px panel + 26px offset */
+                right: 206px; /* 180px panel + 26px offset */
             }
         }
 
         @media (max-width: 1200px) {
             .panel-toggle-btn.panel-open {
-                right: 206px;
-                /* 180px panel + 26px offset */
+                right: 206px; /* 180px panel + 26px offset */
             }
         }
 
         @media (max-width: 768px) {
             .panel-toggle-btn.panel-open {
-                right: 206px;
-                /* 180px panel + 26px offset */
+                right: 206px; /* 180px panel + 26px offset */
             }
         }
 
         @media (max-width: 480px) {
             .panel-toggle-btn.panel-open {
-                right: 206px;
-                /* 180px panel + 26px offset */
+                right: 206px; /* 180px panel + 26px offset */
             }
         }
 
         /* Large screen optimizations */
         @media (min-width: 1920px) {
             .panel-toggle-btn.panel-open {
-                right: 206px;
-                /* 180px panel + 26px offset */
+                right: 206px; /* 180px panel + 26px offset */
             }
         }
 
         /* Mobile landscape optimization */
         @media (max-height: 500px) and (orientation: landscape) {
             .panel-toggle-btn.panel-open {
-                right: 206px;
-                /* 180px panel + 26px offset */
+                right: 206px; /* 180px panel + 26px offset */
             }
+        }
+
+        /* Checkbox styling */
+        input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #a1e5afe6;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        input[type="checkbox"]:checked {
+            background-color: #a1e5afe6;
+            border-color: #508756;
+        }
+
+        /* Custom Sim Button styling */
+        #create-custom-sim-btn {
+            background: #8bff89cc;
+            /* border-radius: 1px; */
+            border: 3px solid #5bb465;
+        }
+
+        #create-custom-sim-btn:hover {
+            background: #5edf5bcc;
+        }
+
+        /* Drag and drop styling */
+        .main-container.drag-over {
+            position: relative;
+        }
+
+        .main-container.drag-over::before {
+            content: "📁 Drop JSON configuration file here";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 10px;
+            font-size: 18px;
+            font-weight: bold;
+            z-index: 10000;
+            pointer-events: none;
+            border: 3px dashed rgba(255, 255, 255, 0.5);
+        }
+
+        .main-container.drag-over::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 9999;
+            pointer-events: none;
         }
     </style>
 </head>
 
 <body>
-    <div class="main-container">
+    <div class="main-container" id="main-container" data-drop-zone="true">
         <!-- Center Panel - Simulation -->
         <div class="center-panel">
             <div class="canvas-container">
                 <canvas id="webgpu-canvas"></canvas>
             </div>
         </div>
-
+        
         <!-- Right Panel - Compact Controls with Glass Effect -->
         <div class="right-panel" id="right-panel">
+         <!-- Fullscreen button -->
+                <button id="fullscreen-btn" class="fullscreen-btn">🖥️ Fullscreen</button>
             <div class="panel-section">
                 <div class="keyboard-info">
                     <strong>Shortcuts:</strong><br>
@@ -805,10 +877,102 @@
                     <strong>Ctrl+F</strong> - Fullscreen<br>
                     <strong>TAB</strong> - Toggle Panel
                 </div>
+               
+            </div>
+                   <!-- Simulation Controls -->
+            <div class="panel-section">
+                <h3>🎮 CONTROLS</h3>
+    
+                <div class="control-grid">
+                    <button id="play-pause-btn" class="play-pause-btn">▶️</button>
+                    <button id="reset-positions-btn" class="reset-position-btn">Reset Positions</button>
+                </div>
+                    
+                <button id="randomize-btn" class="randomize-btn">Randomize Forces</button>
+    
+            </div>
+
+            <!-- Configuration Generator -->
+            <div class="panel-section">
+                <h3>🌋 GENERATE SIM</h3>
+
+                <!-- Custom Generation Sliders -->
+                <div class="control-group">
+                    <div class="label-row">
+                        <label>Particle Types</label>
+                        <span class="slider-value" id="particle-types-value">5</span>
+                    </div>
+                    <input type="range" id="particle-types-slider" min="2" max="8" value="5" step="1">
+                </div>
+
+                <div class="control-group">
+                    <div class="label-row">
+                        <label>Total Particles</label>
+                        <span class="slider-value" id="total-particles-value">10000</span>
+                    </div>
+                    <input type="range" id="total-particles-slider" min="2000" max="13000" value="10000" step="1000">
+                </div>
+
+                <!-- <h3>⚙️ PHYSICS</h3> -->
+
+                <div class="control-group">
+                    <div class="label-row">
+                        <label>Friction</label>
+                        <span class="slider-value" id="friction-value">50</span>
+                    </div>
+                    <input type="range" id="friction-slider" min="1" max="200" value="50">
+                </div>
+
+                <div class="control-group">
+                    <div class="label-row">
+                        <label>Force Scale</label>
+                        <span class="slider-value" id="force-scale-value">1.0</span>
+                    </div>
+                    <input type="range" id="force-scale-slider" min="0.1" max="5" step="0.1" value="1">
+                </div>
+
+                <div class="control-group">
+                    <div class="label-row">
+                        <label>Particle Size</label>
+                        <span class="slider-value" id="particle-size-value">0.007</span>
+                    </div>
+                    <input type="range" id="particle-size-slider" min="0.002" max="0.013" step="0.001" value="0.007">
+                </div>
+
+                <div class="control-group">
+                    <div class="label-row">
+                        <label>Opacity</label>
+                        <span class="slider-value" id="particle-opacity-value">0.75</span>
+                    </div>
+                    <input type="range" id="particle-opacity-slider" min="0.1" max="1" step="0.05" value="0.75">
+                </div>
+
+                <!-- Checkboxes for Central Force and Looping Borders -->
+                <div class="control-group">
+                    <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <input type="checkbox" id="central-force-checkbox" style="width: auto; margin: 0;">
+                        <span>Central Force</span>
+                    </label>
+                </div>
+
+                <div class="control-group">
+                    <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                        <input type="checkbox" id="looping-borders-checkbox" style="width: auto; margin: 0;">
+                        <span>Looping Borders</span>
+                    </label>
+                </div>
+            
+
+                <!-- Custom Sim Button -->
+                <button id="create-custom-sim-btn" class="new-config-btn">Create Custom Sim</button>
+                <button id="new-config-btn" class="new-config-btn">Generate Random</button>
+                <!-- <div class="config-status">
+                    <div id="config-display">Ready to generate...</div>
+                </div> -->
             </div>
             <!-- Force Parameters -->
             <div class="panel-section">
-                <h3>🎛️ Forces</h3>
+                <h3>🎛️ FORCES</h3>
 
                 <div class="control-group">
                     <div class="label-row">
@@ -847,78 +1011,19 @@
                 </div>
             </div>
 
-            <!-- Parameters -->
+        
+
+            <!-- Visual Settings
             <div class="panel-section">
-                <h3>⚙️ PHYSICS</h3>
+                <h3>🎨 VISUAL </h3> -->
 
-                <div class="control-group">
-                    <div class="label-row">
-                        <label>Friction</label>
-                        <span class="slider-value" id="friction-value">50</span>
-                    </div>
-                    <input type="range" id="friction-slider" min="1" max="200" value="50">
-                </div>
+              
 
-                <div class="control-group">
-                    <div class="label-row">
-                        <label>Force Scale</label>
-                        <span class="slider-value" id="force-scale-value">1.0</span>
-                    </div>
-                    <input type="range" id="force-scale-slider" min="0.1" max="5" step="0.1" value="1">
-                </div>
-            </div>
+            <!-- </div> -->
 
-            <!-- Visual Settings -->
-            <div class="panel-section">
-                <h3>🎨 VISUAL </h3>
+     
 
-                <div class="control-group">
-                    <div class="label-row">
-                        <label>Particle Size</label>
-                        <span class="slider-value" id="particle-size-value">0.007</span>
-                    </div>
-                    <input type="range" id="particle-size-slider" min="0.002" max="0.013" step="0.001" value="0.007">
-                </div>
-
-                <div class="control-group">
-                    <div class="label-row">
-                        <label>Opacity</label>
-                        <span class="slider-value" id="particle-opacity-value">0.75</span>
-                    </div>
-                    <input type="range" id="particle-opacity-slider" min="0.1" max="1" step="0.05" value="0.75">
-                </div>
-
-            </div>
-
-            <!-- Simulation Controls -->
-            <div class="panel-section">
-                <h3>🎮 CONTROLS</h3>
-
-                <!-- Single toggle button for start/pause -->
-                <button id="play-pause-btn" class="play-pause-btn">▶️</button>
-
-                <!-- Reset buttons - stacked -->
-                <!-- <button id="reset-to-original-btn" class="default-btn">Reset to Original</button> -->
-                <button id="reset-positions-btn" class="reset-position-btn">Reset Positions</button>
-
-                <!-- Fullscreen button -->
-                <button id="fullscreen-btn" class="fullscreen-btn">🖥️ Fullscreen</button>
-
-            </div>
-
-            <!-- Configuration Generator -->
-            <div class="panel-section">
-                <h3>🌋 GENERATE SIM</h3>
-
-
-
-                <button id="randomize-btn" class="randomize-btn">Randomize Forces</button>
-                <button id="new-config-btn" class="new-config-btn">Generate Random</button>
-
-                <div class="config-status">
-                    <div id="config-display">Ready to generate...</div>
-                </div>
-            </div>
+            
 
             <!-- Save Configuration -->
             <div class="panel-section">
@@ -926,12 +1031,14 @@
 
                 <div class="compact-buttons">
                     <button id="save-config-btn" class="save-btn">Save</button>
-                    <button id="copy-config-btn" class="copy-btn">Copy</button>
+                    <button id="load-config-btn" class="load-btn">Load</button>
                 </div>
+
+                <input type="file" id="config-file-input" accept=".json" style="display: none;">
 
                 <div class="save-info">
                     <strong>Save:</strong> Ctrl+S<br>
-                    <strong>Copy:</strong> Ctrl+Shift+C
+                    <strong>Load:</strong> Ctrl+L or click Load
                 </div>
             </div>
         </div>

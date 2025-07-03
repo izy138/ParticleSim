@@ -84,6 +84,10 @@ class ConfigGenerator {
             weights.push(0.25, 0.28, 0.22, 0.15, 0.10);
         } else if (numTypes === 6) {
             weights.push(0.25, 0.23, 0.18, 0.16, 0.12, 0.06);
+        } else if (numTypes === 7) {
+            weights.push(0.22, 0.20, 0.18, 0.15, 0.12, 0.08, 0.05);
+        } else if (numTypes === 8) {
+            weights.push(0.20, 0.18, 0.16, 0.14, 0.12, 0.10, 0.07, 0.03);
         } else {
             for (let i = 0; i < numTypes; i++) {
                 weights.push(0.4 / (i + 1));
@@ -94,7 +98,7 @@ class ConfigGenerator {
         return weights.map(w => w / sum);
     }
 
-    generateLavaLampConfiguration(numTypes = 5, numParticles = 12000, forceScale = 1, radius = 20) {
+    generateLavaLampConfiguration(numTypes = 5, numParticles = 12000, forceScale = 1, radius = 20, friction = 50, particleSize = 0.007, particleOpacity = 0.75) {
         const colors = this.generateColors(numTypes);
         const species = [];
         const spawnWeights = this.generateImbalancedPopulations(numTypes);
@@ -116,11 +120,11 @@ class ConfigGenerator {
             particleCount: numParticles,
             species: species,
             simulationSize: [1200, 750],
-            friction: "50",
+            friction: friction.toString(),
             centralForce: 0,
             symmetricForces: false,
-            particleSize: 0.007,
-            particleOpacity: 0.75
+            particleSize: particleSize,
+            particleOpacity: particleOpacity
         };
     }
 
