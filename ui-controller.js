@@ -579,7 +579,7 @@ class UIController {
 
                 resetBtn.textContent = '✓ Forces Modified!';
                 setTimeout(() => {
-                    resetBtn.textContent = 'Reset + Modify Forces';
+                    resetBtn.textContent = 'Update Forces';
                     resetBtn.disabled = false;
                 }, 1000);
 
@@ -587,7 +587,7 @@ class UIController {
                 console.error('Error during reset:', error);
                 resetBtn.textContent = '✗ Error';
                 setTimeout(() => {
-                    resetBtn.textContent = 'Reset + Modify Forces';
+                    // resetBtn.textContent = 'Reset + Modify Forces';
                     resetBtn.disabled = false;
                 }, 2000);
             }
@@ -672,19 +672,19 @@ class UIController {
         const newConfigBtn = document.getElementById('new-config-btn');
         if (newConfigBtn) {
             newConfigBtn.disabled = true;
-            newConfigBtn.textContent = 'Creating New...';
+            // newConfigBtn.textContent = 'Creating New...';
 
             try {
                 await this.simulationManager.restartWithNewConfiguration();
                 newConfigBtn.textContent = '✓ New Config!';
                 setTimeout(() => {
-                    newConfigBtn.textContent = 'New Complete Config';
+                    newConfigBtn.textContent = 'Generate Random';
                     newConfigBtn.disabled = false;
                 }, 1000);
             } catch (error) {
                 newConfigBtn.textContent = '✗ Error';
                 setTimeout(() => {
-                    newConfigBtn.textContent = 'New Complete Config';
+                    newConfigBtn.textContent = 'Error';
                     newConfigBtn.disabled = false;
                 }, 2000);
             }
@@ -695,7 +695,7 @@ class UIController {
         const customSimBtn = document.getElementById('create-custom-sim-btn');
         if (customSimBtn) {
             customSimBtn.disabled = true;
-            customSimBtn.textContent = 'Creating Custom...';
+            // customSimBtn.textContent = 'Creating Custom...';
 
             try {
                 await this.simulationManager.createCustomSimulation();
