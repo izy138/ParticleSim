@@ -1,4 +1,3 @@
-
 // WebGPU utility functions
 class WebGPUUtils {
   /**
@@ -21,37 +20,73 @@ class WebGPUUtils {
       }
       
       try {
-          // Request adapter
-          const adapter = await navigator.gpu.requestAdapter({
-              powerPreference: 'high-performance'
-          });
+          // Request adapter with better cross-platform compatibility
+          let adapter = null;
+          
+          // Detect platform for specific optimizations
+          const isWindows = navigator.platform.indexOf('Win') !== -1;
+          console.log(`Platform detected: ${navigator.platform}, Windows: ${isWindows}`);
+          
+          // Try to get the best adapter available
+          // On Windows, powerPreference is ignored, so we'll try without it first
+          adapter = await navigator.gpu.requestAdapter();
+          
+          // If no adapter found, try with power preference (for non-Windows systems)
+          if (!adapter) {
+              adapter = await navigator.gpu.requestAdapter({
+                  powerPreference: 'high-performance'
+              });
+          }
+          
+          // If still no adapter, try with low-power preference as last resort
+          if (!adapter) {
+              adapter = await navigator.gpu.requestAdapter({
+                  powerPreference: 'low-power'
+              });
+          }
           
           if (!adapter) {
               this.showError("Couldn't request WebGPU adapter.");
               return null;
           }
           
-          // Get adapter features and limits
-        //   console.log("GPU Adapter Features:", Array.from(adapter.features));
-        //   console.log("GPU Adapter Limits:", adapter.limits);
+          // Log adapter info for debugging
+          console.log("Selected GPU Adapter:", adapter.name);
+          console.log("GPU Adapter Features:", Array.from(adapter.features));
+          console.log("GPU Adapter Limits:", adapter.limits);
           
           // Request device with required features and limits
           const requiredFeatures = [];
           
-          // Optional features that might be helpful
-          const optionalFeatures = ['timestamp-query'];
+          // Optional features that might be helpful for performance
+          const optionalFeatures = [
+              'timestamp-query',
+              'shader-f16',
+              'uniform-buffer-array-dynamic-indexing',
+              'storage-buffer-array-dynamic-indexing'
+          ];
+          
           for (const feature of optionalFeatures) {
               if (adapter.features.has(feature)) {
                   requiredFeatures.push(feature);
+                  console.log(`Enabled WebGPU feature: ${feature}`);
               }
           }
           
+          // Optimize device limits for better performance
+          const deviceLimits = {
+              maxBufferSize: Math.min(adapter.limits.maxBufferSize, 1024 * 1024 * 256),
+              maxStorageBufferBindingSize: Math.min(adapter.limits.maxStorageBufferBindingSize, 1024 * 1024 * 128),
+              maxComputeWorkgroupSizeX: adapter.limits.maxComputeWorkgroupSizeX,
+              maxComputeWorkgroupSizeY: adapter.limits.maxComputeWorkgroupSizeY,
+              maxComputeWorkgroupSizeZ: adapter.limits.maxComputeWorkgroupSizeZ,
+              maxComputeWorkgroupsPerDimension: adapter.limits.maxComputeWorkgroupsPerDimension,
+              maxComputeInvocationsPerWorkgroup: adapter.limits.maxComputeInvocationsPerWorkgroup,
+          };
+          
           const device = await adapter.requestDevice({
               requiredFeatures,
-              requiredLimits: {
-                  maxBufferSize: Math.min(adapter.limits.maxBufferSize, 1024 * 1024 * 256),
-                  maxStorageBufferBindingSize: Math.min(adapter.limits.maxStorageBufferBindingSize, 1024 * 1024 * 128),
-              }
+              requiredLimits: deviceLimits
           });
           
           // Listen for device errors
@@ -70,10 +105,14 @@ class WebGPUUtils {
           
           const presentationFormat = navigator.gpu.getPreferredCanvasFormat();
           
+          // Optimize context configuration for better performance
           context.configure({
               device,
               format: presentationFormat,
               alphaMode: 'premultiplied',
+              usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.COPY_SRC,
+              // Add viewFormats for better compatibility
+              viewFormats: [presentationFormat]
           });
           
           return {

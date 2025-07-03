@@ -5,6 +5,13 @@ class ParticleLifeSimulator {
         this.canvasId = canvasId;
         this.frameCount = 0;
         this.debugInterval = 60;
+        
+        // Performance monitoring
+        this.lastFrameTime = 0;
+        this.frameRate = 0;
+        this.frameRateHistory = [];
+        this.maxFrameRate = 60; // Limit to 60 FPS for consistency
+        this.minFrameTime = 1000 / this.maxFrameRate; // Minimum time between frames
 
         this.config = Object.assign({
             numParticles: 10000,
@@ -572,6 +579,26 @@ class ParticleLifeSimulator {
         const { device, context } = this.gpu;
 
         try {
+            // Frame rate limiting for consistent performance
+            const currentTime = performance.now();
+            const timeSinceLastFrame = currentTime - this.lastFrameTime;
+            
+            // Skip frame if we're running too fast (helps with Windows performance)
+            if (timeSinceLastFrame < this.minFrameTime) {
+                return;
+            }
+            
+            this.lastFrameTime = currentTime;
+            
+            // Calculate frame rate
+            if (timeSinceLastFrame > 0) {
+                this.frameRate = 1000 / timeSinceLastFrame;
+                this.frameRateHistory.push(this.frameRate);
+                if (this.frameRateHistory.length > 60) {
+                    this.frameRateHistory.shift();
+                }
+            }
+            
             this.frameCount++;
             const currentTexture = context.getCurrentTexture();
             const textureView = currentTexture.createView();
@@ -613,6 +640,15 @@ class ParticleLifeSimulator {
             renderPass.end();
 
             device.queue.submit([commandEncoder.finish()]);
+            
+            // Log performance every 60 frames
+            if (this.frameCount % this.debugInterval === 0) {
+                const avgFrameRate = this.frameRateHistory.reduce((a, b) => a + b, 0) / this.frameRateHistory.length;
+                console.log(`Performance: ${avgFrameRate.toFixed(1)} FPS, Particles: ${this.config.numParticles}`);
+                
+                // Adjust performance settings based on frame rate
+                this.adjustPerformanceSettings();
+            }
         } catch (error) {
             console.error("Error in render:", error);
             this.stop();
@@ -997,6 +1033,27 @@ class ParticleLifeSimulator {
             console.log("Original forces restored!");
         } else {
             console.log("No original forces stored to restore");
+        }
+    }
+
+    // Performance optimization methods
+    adjustPerformanceSettings() {
+        if (this.frameRateHistory.length < 10) return;
+        
+        const avgFrameRate = this.frameRateHistory.reduce((a, b) => a + b, 0) / this.frameRateHistory.length;
+        
+        // If frame rate is consistently low, reduce particle count or adjust settings
+        if (avgFrameRate < 30 && this.config.numParticles > 5000) {
+            const newParticleCount = Math.max(5000, Math.floor(this.config.numParticles * 0.9));
+            console.log(`Low frame rate detected (${avgFrameRate.toFixed(1)} FPS). Reducing particles from ${this.config.numParticles} to ${newParticleCount}`);
+            this.updateParticleCount(newParticleCount);
+        }
+        
+        // If frame rate is very high, we can increase particle count
+        if (avgFrameRate > 55 && this.config.numParticles < 15000) {
+            const newParticleCount = Math.min(15000, Math.floor(this.config.numParticles * 1.1));
+            console.log(`High frame rate detected (${avgFrameRate.toFixed(1)} FPS). Increasing particles from ${this.config.numParticles} to ${newParticleCount}`);
+            this.updateParticleCount(newParticleCount);
         }
     }
 
