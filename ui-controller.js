@@ -642,15 +642,15 @@ class UIController {
                 const collisionRadiusSlider = document.getElementById('collision-radius-range-slider');
                 
                 if (radiusSlider) {
-                    radiusSlider.value = 22; // Specific value used for randomization
-                    document.getElementById('radius-range-value').textContent = '22';
-                    this.forceParams.radiusRange = 22;
+                    radiusSlider.value = 32; // 22Specific value used for randomization
+                    document.getElementById('radius-range-value').textContent = '32';
+                    this.forceParams.radiusRange = 32;
                 }
                 
                 if (collisionRadiusSlider) {
-                    collisionRadiusSlider.value = 5.5; // Specific value used for randomization
-                    document.getElementById('collision-radius-range-value').textContent = '5.5';
-                    this.forceParams.collisionRadiusRange = 5.5;
+                    collisionRadiusSlider.value = 6; //5.5 Specific value used for randomization
+                    document.getElementById('collision-radius-range-value').textContent = '6';
+                    this.forceParams.collisionRadiusRange = 6;
                 }
                 
                 randomizeBtn.textContent = '✓ Randomized!';

@@ -954,6 +954,8 @@ class ParticleLifeSimulator {
 
         // Recreate bind groups with new buffers
         this.createBindGroups();
+
+        console.log(`Particle count updated to ${newCount}`);
     }
 
     updateFriction(frictionHalfLife) {
@@ -983,11 +985,10 @@ class ParticleLifeSimulator {
 
     async applyNewConfiguration(newConfig) {
         try {
-            console.log("Applying new configuration with aspect ratio support...", newConfig);
+            console.log("Applying new configuration with aspect ratio support...");
 
             // Update particle count if changed
             if (newConfig.particleCount !== this.config.numParticles) {
-                console.log(`Particle count change detected: ${this.config.numParticles} → ${newConfig.particleCount}`);
                 await this.updateParticleCount(newConfig.particleCount);
             }
 
@@ -1025,6 +1026,9 @@ class ParticleLifeSimulator {
             ]);
 
             this.gpu.device.queue.writeBuffer(this.uniformBuffer, 0, uniformData);
+
+            // Store the new configuration as baseline for force modifications
+            this.storeCurrentAsBaseline();
 
             console.log("New configuration applied with aspect ratio support!");
             return true;

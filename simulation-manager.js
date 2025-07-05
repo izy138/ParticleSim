@@ -202,9 +202,9 @@ class SimulationManager {
             // Create force params with specific values for radius and collision radius
             const forceParams = {
                 strengthModifier: 110,
-                radiusRange: 22,  // Specific value for radius when randomizing
+                radiusRange: 32,  //22 Specific value for radius when randomizing
                 collisionStrengthRange: 750,
-                collisionRadiusRange: 5.5,  // Specific value for collision radius when randomizing
+                collisionRadiusRange: 6,  //5.5 Specific value for collision radius when randomizing
                 forceScale: forceScale
             };
             
@@ -535,6 +535,9 @@ class SimulationManager {
                 this.responsiveSystem.setSimulator(this.simulator);
                 this.responsiveSystem.updateSimulationConfig();
             }
+
+            // Store the loaded configuration as baseline for force modifications
+            this.simulator.storeCurrentAsBaseline();
 
             // Update UI
             this.syncSlidersWithConfig();
