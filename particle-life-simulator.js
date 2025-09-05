@@ -101,7 +101,7 @@ class ParticleLifeSimulator {
         this.config.friction = 50.0;
         this.config.centralForce = 0;
         this.config.symmetricForces = false;
-        
+
         // Generate default species configuration
         this.config.species = this.generateDefaultSpecies();
         this.config.numTypes = this.config.species.length;
@@ -112,11 +112,11 @@ class ParticleLifeSimulator {
     generateDefaultSpecies() {
         const numTypes = this.config.numTypes || 8;
         const species = [];
-        
+
         for (let i = 0; i < numTypes; i++) {
             const hue = (i * 360 / numTypes) % 360;
             const [r, g, b] = this.hslToRgb(hue, 0.8, 0.6);
-            
+
             const forces = [];
             for (let j = 0; j < numTypes; j++) {
                 forces.push({
@@ -126,14 +126,14 @@ class ParticleLifeSimulator {
                     collisionRadius: 0.5 + Math.random() * 3
                 });
             }
-            
+
             species.push({
                 name: `Type ${i + 1}`,
                 color: [r, g, b, 1.0],
                 forces: forces
             });
         }
-        
+
         return species;
     }
 
@@ -367,7 +367,7 @@ class ParticleLifeSimulator {
 
     updateParticleAppearance(size, opacity) {
         if (!this.gpu || !this.gpu.device || !this.renderUniformBuffer) return;
-        
+
         const { device, canvas } = this.gpu;
         this.config.particleSize = size;
         this.config.particleOpacity = opacity;
@@ -401,7 +401,7 @@ class ParticleLifeSimulator {
         ]);
 
         this.gpu.device.queue.writeBuffer(this.uniformBuffer, 0, uniformData);
-        
+
         // Only update particle appearance if renderUniformBuffer exists
         if (this.renderUniformBuffer) {
             this.updateParticleAppearance(this.config.particleSize, this.config.particleOpacity);
@@ -964,7 +964,7 @@ class ParticleLifeSimulator {
         this.config.friction = frictionHalfLife;
         const dt = 0.0023;
         const friction = Math.exp(-Math.log(2) * dt / frictionHalfLife);
-        
+
         // Get current aspect ratio from canvas
         const aspectRatio = this.gpu.canvas.width / this.gpu.canvas.height;
 

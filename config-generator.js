@@ -22,7 +22,7 @@ class ConfigGenerator {
     }
 
     calculateForce(typeA, typeB, numTypes, forceScale, radius) {
-        // Your existing lava lamp formula
+        // existing lava lamp formula
         const seed1 = (typeA * 7 + typeB * 13 + numTypes * 3) % 1000;
         const seed2 = (typeA * 11 + typeB * 17 + numTypes * 5) % 1000;
         const random1 = (seed1 * 9301 + 49297) % 233280 / 233280.0;
@@ -97,7 +97,6 @@ class ConfigGenerator {
         const sum = weights.reduce((a, b) => a + b);
         return weights.map(w => w / sum);
     }
-
     generateLavaLampConfiguration(numTypes = 5, numParticles = 12000, forceScale = 1, radius = 20, friction = 50, particleSize = 0.007, particleOpacity = 0.75) {
         const colors = this.generateColors(numTypes);
         const species = [];

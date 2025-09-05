@@ -197,7 +197,7 @@ class SimulationManager {
         try {
             // Get current force scale from slider
             const forceScale = parseFloat(document.getElementById('force-scale-slider').value) || 1.0;
-            
+
             // Create force params with specific values for radius and collision radius
             const forceParams = {
                 strengthModifier: 110,
@@ -206,7 +206,7 @@ class SimulationManager {
                 collisionRadiusRange: 6,  //5.5 Specific value for collision radius when randomizing
                 forceScale: forceScale
             };
-            
+
             await this.simulator.randomizeForces(forceParams);
             console.log("✓ Forces randomized with custom parameters and force scale:", forceScale);
         } catch (error) {
@@ -268,7 +268,7 @@ class SimulationManager {
 
             // Generate the new configuration
             const newConfig = this.generateLavaLampConfiguration(numTypes, finalParticleCount, forceScale, radius, friction, particleSize, particleOpacity);
-            
+
             // Add custom parameters to the config
             newConfig.centralForce = centralForce;
             newConfig.loopingBorders = loopingBorders;
@@ -310,12 +310,12 @@ class SimulationManager {
                 // Reset force parameter sliders to default values for new configurations
                 const radiusSlider = document.getElementById('radius-range-slider');
                 const collisionRadiusSlider = document.getElementById('collision-radius-range-slider');
-                
+
                 if (radiusSlider) {
                     radiusSlider.value = 25; // Default value for new configurations
                     document.getElementById('radius-range-value').textContent = '25';
                 }
-                
+
                 if (collisionRadiusSlider) {
                     collisionRadiusSlider.value = 4; // Default value for new configurations
                     document.getElementById('collision-radius-range-value').textContent = '4';
@@ -399,7 +399,7 @@ class SimulationManager {
 
             // Generate the custom configuration
             const newConfig = this.generateLavaLampConfiguration(numTypes, finalParticleCount, forceScale, radius, friction, particleSize, particleOpacity);
-            
+
             // Add custom parameters to the config
             newConfig.centralForce = centralForce;
             newConfig.loopingBorders = loopingBorders;
@@ -432,12 +432,12 @@ class SimulationManager {
                 // Reset force parameter sliders to default values for new configurations
                 const radiusSlider = document.getElementById('radius-range-slider');
                 const collisionRadiusSlider = document.getElementById('collision-radius-range-slider');
-                
+
                 if (radiusSlider) {
                     radiusSlider.value = 25; // Default value for new configurations
                     document.getElementById('radius-range-value').textContent = '25';
                 }
-                
+
                 if (collisionRadiusSlider) {
                     collisionRadiusSlider.value = 4; // Default value for new configurations
                     document.getElementById('collision-radius-range-value').textContent = '4';
@@ -489,20 +489,20 @@ class SimulationManager {
             // Check if we need to restart the simulator (different number of types)
             const currentTypes = this.simulator.config.numTypes;
             const newTypes = config.species.length;
-            
+
             if (currentTypes !== newTypes) {
                 console.log(`Type count changed from ${currentTypes} to ${newTypes}, restarting simulator...`);
-                
+
                 // Show user feedback about the restart
                 const display = document.getElementById('config-display');
                 if (display) {
                     const originalText = display.innerHTML;
                     display.innerHTML = `<strong style="color: blue;">🔄 Restarting simulator for ${newTypes} particle types...</strong>`;
-                    
+
                     // Create a new simulator with the loaded configuration
                     this.simulator = new ParticleLifeSimulator('webgpu-canvas', config);
                     const initialized = await this.simulator.initialize();
-                    
+
                     if (!initialized) {
                         display.innerHTML = `<strong style="color: red;">✗ Failed to initialize simulator</strong>`;
                         setTimeout(() => {
@@ -510,7 +510,7 @@ class SimulationManager {
                         }, 3000);
                         throw new Error("Failed to initialize new simulator with loaded configuration");
                     }
-                    
+
                     // Restore original display after successful restart
                     setTimeout(() => {
                         display.innerHTML = originalText;
@@ -519,7 +519,7 @@ class SimulationManager {
                     // Create a new simulator with the loaded configuration
                     this.simulator = new ParticleLifeSimulator('webgpu-canvas', config);
                     const initialized = await this.simulator.initialize();
-                    
+
                     if (!initialized) {
                         throw new Error("Failed to initialize new simulator with loaded configuration");
                     }
@@ -578,7 +578,6 @@ class SimulationManager {
         }
         return this.uiController;
     }
-
     generateLavaLampConfiguration(numTypes = 5, numParticles = 12000, forceScale = 1, radius = 20, friction = 50, particleSize = 0.007, particleOpacity = 0.75) {
         const generator = this.getConfigGenerator();
         return generator.generateLavaLampConfiguration(numTypes, numParticles, forceScale, radius, friction, particleSize, particleOpacity);
@@ -655,8 +654,10 @@ class SimulationManager {
 
         const sizeSlider = document.getElementById('particle-size-slider');
         if (sizeSlider) {
-            sizeSlider.value = this.simulator.config.particleSize;
-            document.getElementById('particle-size-value').textContent = this.simulator.config.particleSize;
+            // Convert actual size (0.007) to display value (7)
+            const displayValue = Math.round(this.simulator.config.particleSize * 1000);
+            sizeSlider.value = displayValue;  // Set slider to 7
+            document.getElementById('particle-size-value').textContent = displayValue;
         }
 
         const opacitySlider = document.getElementById('particle-opacity-slider');
