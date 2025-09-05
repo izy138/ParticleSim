@@ -44,7 +44,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         let pos_j = vec2<f32>(particlesIn[jBase], particlesIn[jBase + 1u]);
         let type_j = u32(particlesIn[jBase + 4u]);
 
-        // FIXED: Apply aspect ratio correction to distance calculation
+        // Apply aspect ratio correction to distance calculation
         var dx = pos_j.x - pos.x;
         var dy = pos_j.y - pos.y;
         
@@ -67,20 +67,19 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
         if (dist < radius && radius > 0.0) {
             let f = strength * (1.0 - dist / radius);
             var forceContrib = f * dir;
-            // FIXED: Scale force X component back by inverse aspect ratio
+            // Scale force X component back by inverse aspect ratio
             forceContrib.x = forceContrib.x / params.aspectRatio;
             force += forceContrib;
         }
         if (dist < collRadius && collRadius > 0.0) {
             let repulse = collStrength * (1.0 - dist / collRadius);
             var repulseContrib = repulse * dir;
-            // FIXED: Scale repulsion X component back by inverse aspect ratio
+            // Scale repulsion X component back by inverse aspect ratio
             repulseContrib.x = repulseContrib.x / params.aspectRatio;
             force -= repulseContrib;
         }
     }
 
-    // FIXED: Apply aspect ratio correction to central force
     let toCenter = -pos;
     let distanceToCenter = length(vec2<f32>(toCenter.x * params.aspectRatio, toCenter.y));
     
@@ -99,8 +98,6 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     }
 
 
-   // ADD THIS AFTER CENTRAL FORCE SECTION, BEFORE VELOCITY INTEGRATION
-    
     // Corner escape force - prevents particles from getting stuck in corners
     // Only activate when particle is very close to BOTH walls (actual corner region)
     let corner_threshold = 0.025; // Distance from walls to consider "in corner"
@@ -199,7 +196,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 
     var newPos = pos + newVel * params.dt;
     
-    // FIXED: Apply aspect ratio correction to wall bounds with margin to prevent clipping
+//Apply aspect ratio correction to wall bounds with margin to prevent clipping
     let boundX = 0.997;  // Reduced from 1.0 to prevent edge clipping
     let boundY = 0.994;  // Reduced from 1.0 to prevent edge clipping
 

@@ -119,7 +119,6 @@ class SimulationManager {
             if (ratio < 0.7 || ratio > 1.3) {
                 console.log(`Recommending particle count adjustment: ${currentParticles} → ${recommendedParticles}`);
 
-                // You could automatically apply this, or just log it for user decision
                 // this.updateParticleCount(recommendedParticles);
             }
         }

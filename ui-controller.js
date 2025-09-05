@@ -109,7 +109,7 @@ class UIController {
         if (sizeSlider) {
             sizeSlider.addEventListener('input', () => {
                 document.getElementById('particle-size-value').textContent = sizeSlider.value;
-                this.updateParticleSize(parseFloat(sizeSlider.value));
+                this.updateParticleSize(parseFloat(sizeSlider.value) / 1000);  //should be 0.007 => changed it to 7
             });
         }
 
@@ -636,23 +636,23 @@ class UIController {
 
             try {
                 await this.simulationManager.randomizeForces();
-                
+
                 // Update the force parameter sliders to reflect the values used for randomization
                 const radiusSlider = document.getElementById('radius-range-slider');
                 const collisionRadiusSlider = document.getElementById('collision-radius-range-slider');
-                
+
                 if (radiusSlider) {
                     radiusSlider.value = 32; // 22Specific value used for randomization
                     document.getElementById('radius-range-value').textContent = '32';
                     this.forceParams.radiusRange = 32;
                 }
-                
+
                 if (collisionRadiusSlider) {
                     collisionRadiusSlider.value = 6; //5.5 Specific value used for randomization
                     document.getElementById('collision-radius-range-value').textContent = '6';
                     this.forceParams.collisionRadiusRange = 6;
                 }
-                
+
                 randomizeBtn.textContent = '✓ Randomized!';
                 setTimeout(() => {
                     randomizeBtn.textContent = 'Randomize Forces';
@@ -736,18 +736,18 @@ class UIController {
 
             // Load the configuration
             const config = await ConfigUtils.loadConfigurationFromFile(file);
-            
+
             // Check if type count is changing
             const currentTypes = this.simulator?.config?.numTypes || 0;
             const newTypes = config.species.length;
-            
+
             if (currentTypes !== newTypes) {
                 loadBtn.textContent = 'Restarting...';
             }
-            
+
             // Apply the loaded configuration
             await this.simulationManager.loadConfiguration(config);
-            
+
             // Show success feedback
             loadBtn.textContent = '✓ Loaded!';
             setTimeout(() => {
@@ -760,7 +760,7 @@ class UIController {
 
         } catch (error) {
             console.error('Error loading configuration:', error);
-            
+
             // Show error feedback
             const loadBtn = document.getElementById('load-config-btn');
             loadBtn.textContent = '✗ Error';
@@ -791,7 +791,7 @@ class UIController {
         const dt = 0.001;
         const friction = Math.exp(-Math.log(2) * dt / (value * 0.001));
 
-        // UPDATED: Include aspect ratio in uniform data
+        // Include aspect ratio in uniform data
         const aspectRatio = this.simulator.gpu.canvas.width / this.simulator.gpu.canvas.height;
 
         const uniformData = new Float32Array([
@@ -904,7 +904,7 @@ class UIController {
     // Setup drag and drop for configuration files
     setupDragAndDrop() {
         const mainContainer = document.getElementById('main-container');
-        
+
         if (!mainContainer) return;
 
         // Prevent default drag behaviors
@@ -930,11 +930,11 @@ class UIController {
         // Handle drop
         mainContainer.addEventListener('drop', async (e) => {
             mainContainer.classList.remove('drag-over');
-            
+
             const files = e.dataTransfer.files;
             if (files.length > 0) {
                 const file = files[0];
-                
+
                 // Check if it's a JSON file
                 if (file.type === 'application/json' || file.name.endsWith('.json')) {
                     try {
@@ -943,20 +943,20 @@ class UIController {
                         if (display) {
                             const originalText = display.innerHTML;
                             display.innerHTML = `<strong style="color: blue;">📁 Loading ${file.name}...</strong>`;
-                            
+
                             // Load the configuration
                             const config = await ConfigUtils.loadConfigurationFromFile(file);
-                            
+
                             // Check if type count is changing
                             const currentTypes = this.simulator?.config?.numTypes || 0;
                             const newTypes = config.species.length;
-                            
+
                             if (currentTypes !== newTypes) {
                                 display.innerHTML = `<strong style="color: blue;">🔄 Restarting simulator for ${newTypes} particle types...</strong>`;
                             }
-                            
+
                             await this.simulationManager.loadConfiguration(config);
-                            
+
                             // Show success feedback
                             display.innerHTML = `<strong style="color: green;">✓ Loaded ${file.name} successfully!</strong>`;
                             setTimeout(() => {
@@ -965,7 +965,7 @@ class UIController {
                         }
                     } catch (error) {
                         console.error('Error loading dropped file:', error);
-                        
+
                         // Show error feedback
                         const display = document.getElementById('config-display');
                         if (display) {

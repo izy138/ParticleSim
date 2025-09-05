@@ -93,7 +93,7 @@
             padding-right: 11px;
             /* padding-top: 12px; */
             /* padding-bottom: 12px; */
-         
+
             max-height: calc(100vh - 27px);
             overflow-y: auto;
 
@@ -508,15 +508,15 @@
         @media (max-width: 1400px) {
             .right-panel {
                 /* width: 180px; - removed to keep consistent width */
-                /*
+        /*
             }
-        } */ 
+        } */
 
         /* @media (max-width: 1200px) {
             .right-panel {
                 /* width: 160px; - removed to keep consistent width */
-                /* padding: 10px; - removed to keep consistent padding */
-          /*  }
+        /* padding: 10px; - removed to keep consistent padding */
+        /*  }
 
             .simulation-title {
                 font-size: 18px;
@@ -572,12 +572,12 @@
 
         /* Large screen optimizations */
         @media (min-width: 1920px) {
+
             /* .right-panel {
                 /* width: 220px; - removed to keep consistent width */
-                /* padding: 16px; - removed to keep consistent padding */
-            /* } */ */
-
-            .simulation-title {
+            /* padding: 16px; - removed to keep consistent padding */
+            /* } */
+            */ .simulation-title {
                 font-size: 22px;
             }
         }
@@ -730,13 +730,14 @@
             align-items: center;
             justify-content: center;
         }
-            /* Add border to the arrow text
+
+        /* Add border to the arrow text
             text-shadow: 
                 -1px 0px 0 rgba(255, 255, 255, 0.4),
                 2px 0.5px 0 rgba(255, 255, 255, 0.4),
                 /* -1px 1px 0 rgba(255, 255, 255, 0.4), */
-                /* 2px -1px 0 rgba(255, 255, 255, 0.4);
-        } */ 
+        /* 2px -1px 0 rgba(255, 255, 255, 0.4);
+        } */
 
         .panel-toggle-btn:hover {
             background: rgba(255, 255, 255, 0.4);
@@ -749,7 +750,8 @@
         }
 
         .panel-toggle-btn.panel-open {
-            right: 206px; /* Default for 180px panel + 26px offset */
+            right: 206px;
+            /* Default for 180px panel + 26px offset */
             width: 20px;
             z-index: 1002;
         }
@@ -757,39 +759,45 @@
         /* Responsive breakpoints for panel toggle button */
         @media (max-width: 1400px) {
             .panel-toggle-btn.panel-open {
-                right: 206px; /* 180px panel + 26px offset */
+                right: 206px;
+                /* 180px panel + 26px offset */
             }
         }
 
         @media (max-width: 1200px) {
             .panel-toggle-btn.panel-open {
-                right: 206px; /* 180px panel + 26px offset */
+                right: 206px;
+                /* 180px panel + 26px offset */
             }
         }
 
         @media (max-width: 768px) {
             .panel-toggle-btn.panel-open {
-                right: 206px; /* 180px panel + 26px offset */
+                right: 206px;
+                /* 180px panel + 26px offset */
             }
         }
 
         @media (max-width: 480px) {
             .panel-toggle-btn.panel-open {
-                right: 206px; /* 180px panel + 26px offset */
+                right: 206px;
+                /* 180px panel + 26px offset */
             }
         }
 
         /* Large screen optimizations */
         @media (min-width: 1920px) {
             .panel-toggle-btn.panel-open {
-                right: 206px; /* 180px panel + 26px offset */
+                right: 206px;
+                /* 180px panel + 26px offset */
             }
         }
 
         /* Mobile landscape optimization */
         @media (max-height: 500px) and (orientation: landscape) {
             .panel-toggle-btn.panel-open {
-                right: 206px; /* 180px panel + 26px offset */
+                right: 206px;
+                /* 180px panel + 26px offset */
             }
         }
 
@@ -862,11 +870,11 @@
                 <canvas id="webgpu-canvas"></canvas>
             </div>
         </div>
-        
+
         <!-- Right Panel - Compact Controls with Glass Effect -->
         <div class="right-panel" id="right-panel">
-         <!-- Fullscreen button -->
-                <button id="fullscreen-btn" class="fullscreen-btn">🖥️ Fullscreen</button>
+            <!-- Fullscreen button -->
+            <button id="fullscreen-btn" class="fullscreen-btn">🖥️ Fullscreen</button>
             <div class="panel-section">
                 <div class="keyboard-info">
                     <strong>Shortcuts:</strong><br>
@@ -877,19 +885,19 @@
                     <strong>Ctrl+F</strong> - Fullscreen<br>
                     <strong>TAB</strong> - Toggle Panel
                 </div>
-               
+
             </div>
-                   <!-- Simulation Controls -->
+            <!-- Simulation Controls -->
             <div class="panel-section">
                 <h3>🎮 CONTROLS</h3>
-    
+
                 <div class="control-grid">
                     <button id="play-pause-btn" class="play-pause-btn">▶️</button>
                     <button id="reset-positions-btn" class="reset-position-btn">Reset Positions</button>
                 </div>
-                    
+
                 <button id="randomize-btn" class="randomize-btn">🎲Randomize Force</button>
-    
+
             </div>
 
             <!-- Configuration Generator -->
@@ -936,7 +944,7 @@
                         <label>Particle Size</label>
                         <span class="slider-value" id="particle-size-value">0.007</span>
                     </div>
-                    <input type="range" id="particle-size-slider" min="0.002" max="0.013" step="0.001" value="0.007">
+                    <input type="range" id="particle-size-slider" min="2" max="13" step="1" value="7">
                 </div>
 
                 <div class="control-group">
@@ -961,7 +969,7 @@
                         <span>Looping Borders</span>
                     </label>
                 </div>
-            
+
 
                 <!-- Custom Sim Button -->
                 <button id="create-custom-sim-btn" class="new-config-btn">Create Custom Sim</button>
@@ -1011,19 +1019,19 @@
                 </div>
             </div>
 
-        
+
 
             <!-- Visual Settings
             <div class="panel-section">
                 <h3>🎨 VISUAL </h3> -->
 
-              
+
 
             <!-- </div> -->
 
-     
 
-            
+
+
 
             <!-- Save Configuration -->
             <div class="panel-section">
