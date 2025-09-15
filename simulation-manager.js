@@ -215,12 +215,12 @@ class SimulationManager {
     }
 
     /**
-     * Restart simulation with a completely new configuration
-     */
+ * Restart simulation with a completely new configuration
+ */
     async restartWithNewConfiguration() {
         if (!this.simulator) return;
 
-        // console.log("=== CREATING NEW COMPLETE CONFIGURATION ===");
+        console.log("=== CREATING NEW COMPLETE CONFIGURATION ===");
 
         const wasRunning = this.simulator.isRunning;
         if (this.simulator.isRunning) {
@@ -230,49 +230,56 @@ class SimulationManager {
         try {
             // Get current canvas size for the new config
             const canvasInfo = this.getCanvasInfo();
-            // console.log('Using canvas size for new config:', canvasInfo);
+            console.log('Using canvas size for new config:', canvasInfo);
 
-            // Get custom parameters from UI sliders
-            const numTypes = parseInt(document.getElementById('particle-types-slider').value) || 5;
-            const numParticles = parseInt(document.getElementById('total-particles-slider').value) || 12000;
-            const centralForce = document.getElementById('central-force-checkbox').checked ? 1 : 0;
-            const loopingBorders = document.getElementById('looping-borders-checkbox').checked ? 1 : 0;
-            const friction = parseFloat(document.getElementById('friction-slider').value) || 50;
-            const forceScale = parseFloat(document.getElementById('force-scale-slider').value) || 1.0;
-            const particleSize = parseFloat(document.getElementById('particle-size-slider').value) || 0.007;
-            const particleOpacity = parseFloat(document.getElementById('particle-opacity-slider').value) || 0.75;
+            // Generate completely new configuration with current canvas dimensions
+            const numTypes = 3 + Math.floor(Math.random() * 4); // 3-6 types
 
-            // Use device-optimized particle count if responsive system suggests it
-            let finalParticleCount = numParticles;
+            // Use device-optimized particle count
+            let numParticles = 10000;
             if (this.responsiveSystem) {
-                const recommendedCount = this.responsiveSystem.getRecommendedParticleCount();
-                if (numParticles > recommendedCount) {
-                    finalParticleCount = recommendedCount;
-                    // Update the slider to reflect the actual count used
-                    document.getElementById('total-particles-slider').value = finalParticleCount;
-                    document.getElementById('total-particles-value').textContent = finalParticleCount;
-                }
+                numParticles = this.responsiveSystem.getRecommendedParticleCount();
             }
 
+            const forceScale = 1 + Math.random() * 0.9; // 0.8-1.2 scale
             const radius = 15 + Math.random() * 10; // 15-25 radius
 
-            // console.log("Generating new lava lamp configuration:", {
-            //     numTypes,
-            //     numParticles: finalParticleCount,
-            //     centralForce,
-            //     loopingBorders,
-            //     forceScale,
-            //     radius,
-            //     canvasSize: canvasInfo
-            // });
+            // FIX: Add null checking for missing checkboxes
+            const centralForceCheckbox = document.getElementById('central-force-checkbox');
+            const centralForce = centralForceCheckbox?.checked ? 1 : 0;
+
+            const loopingBordersCheckbox = document.getElementById('looping-borders-checkbox');
+            const loopingBorders = loopingBordersCheckbox?.checked ? 1 : 0;
+
+            // Get other parameters with null checking
+            const friction = parseFloat(document.getElementById('friction-slider')?.value) || 50;
+
+            // FIX: Convert particle size from display value to actual value
+            const sizeSliderValue = parseFloat(document.getElementById('particle-size-slider')?.value) || 7;
+            const particleSize = sizeSliderValue / 1000; // Convert 7 to 0.007
+
+            const particleOpacity = parseFloat(document.getElementById('particle-opacity-slider')?.value) || 0.75;
+
+            console.log("Generating new lava lamp configuration:", {
+                numTypes,
+                numParticles,
+                forceScale,
+                radius,
+                centralForce,
+                loopingBorders,
+                friction,
+                particleSize,
+                particleOpacity,
+                canvasSize: canvasInfo
+            });
 
             // Generate the new configuration
-            const newConfig = this.generateLavaLampConfiguration(numTypes, finalParticleCount, forceScale, radius, friction, particleSize, particleOpacity);
+            const newConfig = this.generateLavaLampConfiguration(numTypes, numParticles, forceScale, radius);
 
-            // Add custom parameters to the config
+            // Add the additional parameters
             newConfig.centralForce = centralForce;
             newConfig.loopingBorders = loopingBorders;
-            newConfig.friction = friction;
+            newConfig.friction = friction.toString();
             newConfig.particleSize = particleSize;
             newConfig.particleOpacity = particleOpacity;
 
@@ -281,20 +288,25 @@ class SimulationManager {
                 newConfig.simulationSize = [canvasInfo.width, canvasInfo.height];
             }
 
-            // console.log("Generated config:", {
-            //     particleCount: newConfig.particleCount,
-            //     speciesCount: newConfig.species.length,
-            //     simulationSize: newConfig.simulationSize
-            // });
+            console.log("Generated config:", {
+                particleCount: newConfig.particleCount,
+                speciesCount: newConfig.species.length,
+                simulationSize: newConfig.simulationSize,
+                centralForce: newConfig.centralForce,
+                loopingBorders: newConfig.loopingBorders,
+                friction: newConfig.friction,
+                particleSize: newConfig.particleSize,
+                particleOpacity: newConfig.particleOpacity
+            });
 
             // Create brand new simulator with the generated config
             this.simulator = new ParticleLifeSimulator('webgpu-canvas', newConfig);
 
-            // console.log("Initializing new simulator...");
+            console.log("Initializing new simulator...");
             const initialized = await this.simulator.initialize();
 
             if (initialized) {
-                // console.log("New simulator initialized successfully!");
+                console.log("New simulator initialized successfully!");
 
                 // Reconnect responsive system
                 if (this.responsiveSystem) {
@@ -306,26 +318,6 @@ class SimulationManager {
                 this.simulator.storeCurrentAsBaseline();
                 this.syncSlidersWithConfig();
                 this.updateConfigDisplay(newConfig);
-
-                // Reset force parameter sliders to default values for new configurations
-                const radiusSlider = document.getElementById('radius-range-slider');
-                const collisionRadiusSlider = document.getElementById('collision-radius-range-slider');
-
-                if (radiusSlider) {
-                    radiusSlider.value = 25; // Default value for new configurations
-                    document.getElementById('radius-range-value').textContent = '25';
-                }
-
-                if (collisionRadiusSlider) {
-                    collisionRadiusSlider.value = 4; // Default value for new configurations
-                    document.getElementById('collision-radius-range-value').textContent = '4';
-                }
-
-                // Update UI controller's forceParams if available
-                if (this.uiController && this.uiController.forceParams) {
-                    this.uiController.forceParams.radiusRange = 25;
-                    this.uiController.forceParams.collisionRadiusRange = 4;
-                }
 
                 // Start if it was running before
                 if (wasRunning) {
@@ -347,9 +339,6 @@ class SimulationManager {
         }
     }
 
-    /**
-     * Create custom simulation from current slider values
-     */
     async createCustomSimulation() {
         if (!this.simulator) return;
 
@@ -362,15 +351,25 @@ class SimulationManager {
             // Get current canvas size for the new config
             const canvasInfo = this.getCanvasInfo();
 
-            // Get custom parameters from UI sliders and checkboxes
-            const numTypes = parseInt(document.getElementById('particle-types-slider').value) || 5;
-            const numParticles = parseInt(document.getElementById('total-particles-slider').value) || 12000;
-            const centralForce = document.getElementById('central-force-checkbox').checked ? 1 : 0;
-            const loopingBorders = document.getElementById('looping-borders-checkbox').checked ? 1 : 0;
-            const friction = parseFloat(document.getElementById('friction-slider').value) || 50;
-            const forceScale = parseFloat(document.getElementById('force-scale-slider').value) || 1.0;
-            const particleSize = parseFloat(document.getElementById('particle-size-slider').value) || 0.007;
-            const particleOpacity = parseFloat(document.getElementById('particle-opacity-slider').value) || 0.75;
+            // Get custom parameters from UI sliders and checkboxes (with null checking)
+            const numTypes = parseInt(document.getElementById('particle-types-slider')?.value) || 5;
+            const numParticles = parseInt(document.getElementById('total-particles-slider')?.value) || 12000;
+
+            // FIX: Add null checking for missing checkboxes
+            const centralForceCheckbox = document.getElementById('central-force-checkbox');
+            const centralForce = centralForceCheckbox?.checked ? 1 : 0;
+
+            const loopingBordersCheckbox = document.getElementById('looping-borders-checkbox');
+            const loopingBorders = loopingBordersCheckbox?.checked ? 1 : 0;
+
+            const friction = parseFloat(document.getElementById('friction-slider')?.value) || 50;
+            const forceScale = parseFloat(document.getElementById('force-scale-slider')?.value) || 1.0;
+
+            // FIX: Convert particle size from display value to actual value
+            const sizeSliderValue = parseFloat(document.getElementById('particle-size-slider')?.value) || 7;
+            const particleSize = sizeSliderValue / 1000; // Convert 7 to 0.007
+
+            const particleOpacity = parseFloat(document.getElementById('particle-opacity-slider')?.value) || 0.75;
 
             // Use device-optimized particle count if responsive system suggests it
             let finalParticleCount = numParticles;
@@ -378,9 +377,11 @@ class SimulationManager {
                 const recommendedCount = this.responsiveSystem.getRecommendedParticleCount();
                 if (numParticles > recommendedCount) {
                     finalParticleCount = recommendedCount;
-                    // Update the slider to reflect the actual count used
-                    document.getElementById('total-particles-slider').value = finalParticleCount;
-                    document.getElementById('total-particles-value').textContent = finalParticleCount;
+                    // Update the slider to reflect the actual count used (with null checking)
+                    const particleSlider = document.getElementById('total-particles-slider');
+                    const particleValue = document.getElementById('total-particles-value');
+                    if (particleSlider) particleSlider.value = finalParticleCount;
+                    if (particleValue) particleValue.textContent = finalParticleCount;
                 }
             }
 
@@ -429,18 +430,20 @@ class SimulationManager {
                 this.syncSlidersWithConfig();
                 this.updateConfigDisplay(newConfig);
 
-                // Reset force parameter sliders to default values for new configurations
+                // Reset force parameter sliders to default values for new configurations (with null checking)
                 const radiusSlider = document.getElementById('radius-range-slider');
                 const collisionRadiusSlider = document.getElementById('collision-radius-range-slider');
+                const radiusValue = document.getElementById('radius-range-value');
+                const collisionRadiusValue = document.getElementById('collision-radius-range-value');
 
                 if (radiusSlider) {
                     radiusSlider.value = 25; // Default value for new configurations
-                    document.getElementById('radius-range-value').textContent = '25';
+                    if (radiusValue) radiusValue.textContent = '25';
                 }
 
                 if (collisionRadiusSlider) {
                     collisionRadiusSlider.value = 4; // Default value for new configurations
-                    document.getElementById('collision-radius-range-value').textContent = '4';
+                    if (collisionRadiusValue) collisionRadiusValue.textContent = '4';
                 }
 
                 // Update UI controller's forceParams if available

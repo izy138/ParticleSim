@@ -757,14 +757,21 @@ class ParticleLifeSimulator {
             }
         }
 
+
+        // FIX: Convert slider display value to actual value
+        const sizeSliderValue = parseFloat(document.getElementById('particle-size-slider')?.value) || 7;
+        const actualParticleSize = sizeSliderValue / 1000; // Convert 7 to 0.007
+
+        const opacitySliderValue = parseFloat(document.getElementById('particle-opacity-slider')?.value) || 0.75;
+
         const newConfig = {
             particleCount: this.config.numParticles,
             species: newSpecies,
             friction: this.config.friction,
             centralForce: this.config.centralForce,
             symmetricForces: false,
-            particleSize: parseFloat(document.getElementById('particle-size-slider')?.value) || 0.007,
-            particleOpacity: parseFloat(document.getElementById('particle-opacity-slider')?.value) || 0.75
+            particleSize: actualParticleSize,  // Use converted value
+            particleOpacity: opacitySliderValue
         };
 
         await this.updateForceMatrices(newConfig);
