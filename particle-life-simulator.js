@@ -17,6 +17,9 @@ class ParticleLifeSimulator {
         this.isPaused = false;
         this.frameId = null;
         this.bufferIndex = 0;
+        // mouse 
+        this.mouseInteraction = null;
+        this.mouseUniformBuffer = null;
     }
 
     async initialize() {
@@ -40,6 +43,7 @@ class ParticleLifeSimulator {
 
             this.initializeParticles();
             this.createShaderModules(computeShaderCode, renderShaderCode);
+            this.setupMouseInteraction(); //mouse
             this.createBindGroups();
             this.createPipelines();
 
@@ -422,11 +426,16 @@ class ParticleLifeSimulator {
             code: renderShaderCode
         });
     }
-
     createBindGroups() {
         const { device } = this.gpu;
 
-        // Compute bind group layout
+        // Check if mouse uniform buffer exists, if not create a default one
+        if (!this.mouseUniformBuffer) {
+            console.warn("Mouse uniform buffer not found, creating default buffer");
+            this.createMouseUniformBuffer();
+        }
+
+        // Compute bind group layout - ADD mouse binding
         this.computeBindGroupLayout = device.createBindGroupLayout({
             label: 'compute-bind-group-layout',
             entries: [
@@ -437,11 +446,12 @@ class ParticleLifeSimulator {
                 { binding: 4, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'read-only-storage' } },
                 { binding: 5, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'read-only-storage' } },
                 { binding: 6, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'read-only-storage' } },
-                { binding: 7, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'read-only-storage' } }
+                { binding: 7, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'read-only-storage' } },
+                { binding: 8, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'uniform' } } // NEW: Mouse data
             ]
         });
 
-        // Create compute bind groups
+        // Create compute bind groups - ADD mouse binding
         this.computeBindGroups = [
             device.createBindGroup({
                 label: 'compute-bind-group-0',
@@ -454,7 +464,8 @@ class ParticleLifeSimulator {
                     { binding: 4, resource: { buffer: this.strengthBuffer } },
                     { binding: 5, resource: { buffer: this.radiusBuffer } },
                     { binding: 6, resource: { buffer: this.collisionStrengthBuffer } },
-                    { binding: 7, resource: { buffer: this.collisionRadiusBuffer } }
+                    { binding: 7, resource: { buffer: this.collisionRadiusBuffer } },
+                    { binding: 8, resource: { buffer: this.mouseUniformBuffer } } // NEW: Mouse data
                 ]
             }),
             device.createBindGroup({
@@ -468,7 +479,8 @@ class ParticleLifeSimulator {
                     { binding: 4, resource: { buffer: this.strengthBuffer } },
                     { binding: 5, resource: { buffer: this.radiusBuffer } },
                     { binding: 6, resource: { buffer: this.collisionStrengthBuffer } },
-                    { binding: 7, resource: { buffer: this.collisionRadiusBuffer } }
+                    { binding: 7, resource: { buffer: this.collisionRadiusBuffer } },
+                    { binding: 8, resource: { buffer: this.mouseUniformBuffer } } // NEW: Mouse data
                 ]
             })
         ];
@@ -483,7 +495,7 @@ class ParticleLifeSimulator {
             ]
         });
 
-        // Create render bind groups
+        // Create render bind groups 
         this.renderBindGroups = [
             device.createBindGroup({
                 label: 'render-bind-group-0',
@@ -504,6 +516,8 @@ class ParticleLifeSimulator {
                 ]
             })
         ];
+
+        console.log("Bind groups created successfully with mouse uniform buffer");
     }
 
     createPipelines() {
@@ -621,6 +635,10 @@ class ParticleLifeSimulator {
 
         try {
             this.frameCount++;
+
+            // Update mouse data before rendering
+            this.updateMouseUniformBuffer();
+
             const currentTexture = context.getCurrentTexture();
             const textureView = currentTexture.createView();
             const commandEncoder = device.createCommandEncoder({
@@ -1045,7 +1063,7 @@ class ParticleLifeSimulator {
         }
     }
 
-    // Also add this method to reset to original forces
+    // add this method to reset to original forces
     resetToOriginalForces() {
         if (this.originalForces) {
             console.log("Restoring original forces...");
@@ -1055,6 +1073,110 @@ class ParticleLifeSimulator {
             console.log("Original forces restored!");
         } else {
             console.log("No original forces stored to restore");
+        }
+    }
+
+    // mouse
+    setupMouseInteraction() {
+        // Create mouse interaction system
+        this.mouseInteraction = new MouseInteraction(this.canvasId);
+
+        // Create mouse uniform buffer
+        this.createMouseUniformBuffer();
+
+    }
+
+
+    createMouseUniformBuffer() {
+        const { device } = this.gpu;
+
+        // Mouse data structure: Need 12 floats (48 bytes) to match WGSL struct alignment
+        const mouseData = new Float32Array(12); // Changed from 8 to 12 floats
+        this.updateMouseData(mouseData);
+
+        this.mouseUniformBuffer = device.createBuffer({
+            size: mouseData.byteLength, // Now 48 bytes (12 * 4)
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+            mappedAtCreation: true
+        });
+
+        new Float32Array(this.mouseUniformBuffer.getMappedRange()).set(mouseData);
+        this.mouseUniformBuffer.unmap();
+
+        console.log("Mouse uniform buffer created successfully with size:", mouseData.byteLength);
+    }
+
+    updateMouseData(mouseData) {
+        if (!this.mouseInteraction) {
+            // Provide default values when mouse interaction isn't ready yet
+            mouseData[0] = 0.0;   // position.x
+            mouseData[1] = 0.0;   // position.y
+            mouseData[2] = 0.0;   // enabled
+            mouseData[3] = 50.0;  // strength
+            mouseData[4] = 0.3;   // radius
+            mouseData[5] = 0.0;   // padding[0]
+            mouseData[6] = 0.0;   // padding[1]
+            mouseData[7] = 0.0;   // padding[2]
+            mouseData[8] = 0.0;   // Additional padding for alignment
+            mouseData[9] = 0.0;   // Additional padding for alignment
+            mouseData[10] = 0.0;  // Additional padding for alignment
+            mouseData[11] = 0.0;  // Additional padding for alignment
+            return;
+        }
+
+        const mouseInfo = this.mouseInteraction.getMouseData();
+        mouseData[0] = mouseInfo.x;        // position.x
+        mouseData[1] = mouseInfo.y;        // position.y
+        mouseData[2] = mouseInfo.enabled;  // enabled
+        mouseData[3] = mouseInfo.strength; // strength
+        mouseData[4] = mouseInfo.radius;   // radius
+        mouseData[5] = 0.0;               // padding[0]
+        mouseData[6] = 0.0;               // padding[1]
+        mouseData[7] = 0.0;               // padding[2]
+        mouseData[8] = 0.0;               // Additional padding for alignment
+        mouseData[9] = 0.0;               // Additional padding for alignment
+        mouseData[10] = 0.0;              // Additional padding for alignment
+        mouseData[11] = 0.0;              // Additional padding for alignment
+    }
+
+    updateMouseUniformBuffer() {
+        if (!this.mouseInteraction || !this.mouseUniformBuffer) return;
+
+        const { device } = this.gpu;
+        const mouseData = new Float32Array(12);
+        this.updateMouseData(mouseData);
+
+        // // DEBUG: Log when mouse is active
+        // if (mouseData[2] > 0.5) { // If enabled
+        //     console.log("🖱️ Mouse active:", {
+        //         pos: [mouseData[0].toFixed(3), mouseData[1].toFixed(3)],
+        //         strength: mouseData[3],
+        //         radius: mouseData[4]
+        //     });
+        // }
+
+        device.queue.writeBuffer(this.mouseUniformBuffer, 0, mouseData);
+    }
+
+    // Method to enable/disable mouse interaction
+    setMouseInteractionEnabled(enabled) {
+        if (this.mouseInteraction) {
+            this.mouseInteraction.setEnabled(enabled);
+        }
+    }
+
+    // Method to set mouse force parameters
+    setMouseForceParameters(strength, radius) {
+        if (this.mouseInteraction) {
+            if (strength !== null) this.mouseInteraction.setForceStrength(strength);
+            if (radius !== null) this.mouseInteraction.setForceRadius(radius);
+        }
+    }
+
+    // Method to toggle attract/repel
+    toggleMouseForceType() {
+        if (this.mouseInteraction) {
+            this.mouseInteraction.toggleForceType();
         }
     }
 

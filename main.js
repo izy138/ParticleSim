@@ -14,8 +14,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         showLoadingState();
 
         // Create and initialize simulation manager (includes responsive system)
+        // window.simulationManager = simulationManager;  // Expose to global scope
         simulationManager = new SimulationManager();
         const initialized = await simulationManager.initialize();
+        window.simulationManager = simulationManager;
+
 
         if (initialized) {
             // Get responsive system reference
@@ -134,6 +137,8 @@ function showError(message) {
  * Log current setup information
  */
 function logCurrentSetup() {
+    const simulationManager = window.simulationManager;
+
     if (!responsiveSystem || !simulationManager.simulator) return;
 
     const canvasInfo = responsiveSystem.getCurrentSize();

@@ -66,6 +66,8 @@ class UIController {
 
         // Setup drag and drop for configuration files
         this.setupDragAndDrop();
+        // Add these mouse interaction event listeners
+        this.setupMouseInteractionListeners();
     }
 
     setupSliders() {
@@ -989,6 +991,83 @@ class UIController {
                 }
             }
         });
+    }
+
+    setupMouseInteractionListeners() {
+        // Checkbox toggle
+        const checkbox = document.getElementById('mouse-interaction-checkbox');
+        if (checkbox) {
+            checkbox.addEventListener('change', (e) => {
+                const enabled = e.target.checked;
+                if (this.simulator && this.simulator.setMouseInteractionEnabled) {
+                    this.simulator.setMouseInteractionEnabled(enabled);
+                    this.updateCanvasCursor(enabled);
+                }
+            });
+        }
+
+        // Force strength slider
+        const strengthSlider = document.getElementById('mouse-force-strength-slider');
+        if (strengthSlider) {
+            strengthSlider.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                document.getElementById('mouse-force-strength-value').textContent = value;
+
+                if (this.simulator && this.simulator.setMouseForceParameters) {
+                    this.simulator.setMouseForceParameters(value, null);
+                }
+            });
+        }
+
+        // Force radius slider
+        const radiusSlider = document.getElementById('mouse-force-radius-slider');
+        if (radiusSlider) {
+            radiusSlider.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                document.getElementById('mouse-force-radius-value').textContent = value;
+
+                if (this.simulator && this.simulator.setMouseForceParameters) {
+                    this.simulator.setMouseForceParameters(null, value);
+                }
+            });
+        }
+
+        // Toggle force type button
+        const toggleBtn = document.getElementById('toggle-force-type-btn');
+        if (toggleBtn) {
+            toggleBtn.addEventListener('click', () => {
+                if (this.simulator && this.simulator.toggleMouseForceType) {
+                    this.simulator.toggleMouseForceType();
+                    this.updateToggleButton();
+                }
+            });
+        }
+    }
+
+    updateCanvasCursor(enabled) {
+        const canvas = document.getElementById('webgpu-canvas');
+        if (canvas) {
+            if (enabled) {
+                canvas.style.cursor = 'crosshair';
+                // canvas.title = 'Mouse interaction enabled - Click to toggle attract/repel';
+            } else {
+                canvas.style.cursor = 'default';
+                canvas.title = '';
+            }
+        }
+    }
+
+    updateToggleButton() {
+        const toggleBtn = document.getElementById('toggle-force-type-btn');
+        if (toggleBtn && this.simulator && this.simulator.mouseInteraction) {
+            if (this.simulator.mouseInteraction.isAttract) {
+                toggleBtn.textContent = '💥 Switch to Repel';
+                toggleBtn.className = 'control-btn attract-mode';
+            } else {
+                toggleBtn.textContent = '🧲 Switch to Attract';
+                toggleBtn.className = 'control-btn repel-mode';
+            }
+        }
     }
 }
 
