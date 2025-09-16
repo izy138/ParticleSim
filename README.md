@@ -2,6 +2,7 @@ Particle Life Simulation
 
 inspired by Sandbox Science Particle Life:
 https://sandbox-science.com/particle-life
+
 inspired by:
 https://lisyarus.github.io/webgpu/particle-life.html
 
