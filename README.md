@@ -1,5 +1,9 @@
-Particle Life Simulation inspired by Sandbox Science Particle Life:
+Particle Life Simulation
+
+inspired by Sandbox Science Particle Life:
 https://sandbox-science.com/particle-life
+inspired by:
+https://lisyarus.github.io/webgpu/particle-life.html
 
 Using WebGPU
 Chrome: turn on hardware acceleration / graphics acceleration.
