@@ -996,9 +996,22 @@ class UIController {
     setupMouseInteractionListeners() {
         // Checkbox toggle
         const checkbox = document.getElementById('mouse-interaction-checkbox');
+        const forceControls = document.querySelector('.mouse-force-controls'); // Add this line
+
         if (checkbox) {
+            // Set initial state (hidden)
+            if (forceControls) {
+                forceControls.style.display = 'none'; // Add this line
+            }
+
             checkbox.addEventListener('change', (e) => {
                 const enabled = e.target.checked;
+
+                // Show/hide force controls (Add these lines)
+                if (forceControls) {
+                    forceControls.style.display = enabled ? 'block' : 'none';
+                }
+
                 if (this.simulator && this.simulator.setMouseInteractionEnabled) {
                     this.simulator.setMouseInteractionEnabled(enabled);
                     this.updateCanvasCursor(enabled);
@@ -1034,22 +1047,23 @@ class UIController {
 
         // Toggle force type button
         const toggleBtn = document.getElementById('toggle-force-type-btn');
-        if (toggleBtn) {
-            toggleBtn.addEventListener('click', () => {
-                if (this.simulator && this.simulator.toggleMouseForceType) {
-                    this.simulator.toggleMouseForceType();
-                    this.updateToggleButton();
-                }
-            });
-        }
+        toggleBtn.addEventListener('click', () => {
+            if (this.simulator && this.simulator.mouseInteraction) {
+                this.simulator.mouseInteraction.toggleForceType(); // Use the MouseInteraction method
+            }
+        });
+
+
     }
 
     updateCanvasCursor(enabled) {
         const canvas = document.getElementById('webgpu-canvas');
         if (canvas) {
             if (enabled) {
-                canvas.style.cursor = 'crosshair';
-                // canvas.title = 'Mouse interaction enabled - Click to toggle attract/repel';
+                //     canvas.style.cursor = 'crosshair';
+                //     // canvas.title = 'Mouse interaction enabled - Click to toggle attract/repel';
+
+                this.canvas.style.cursor = 'none';
             } else {
                 canvas.style.cursor = 'default';
                 canvas.title = '';
@@ -1061,10 +1075,10 @@ class UIController {
         const toggleBtn = document.getElementById('toggle-force-type-btn');
         if (toggleBtn && this.simulator && this.simulator.mouseInteraction) {
             if (this.simulator.mouseInteraction.isAttract) {
-                toggleBtn.textContent = '💥 Switch to Repel';
+                toggleBtn.textContent = ' Switch to Repel';
                 toggleBtn.className = 'control-btn attract-mode';
             } else {
-                toggleBtn.textContent = '🧲 Switch to Attract';
+                toggleBtn.textContent = 'Switch to Attract';
                 toggleBtn.className = 'control-btn repel-mode';
             }
         }

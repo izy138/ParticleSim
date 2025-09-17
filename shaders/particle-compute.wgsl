@@ -108,7 +108,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
             let mouseForceStrength = mouseData.strength * distanceFactor * distanceFactor; // Quadratic falloff
             
             // Apply mouse force
-            var mouseForce = mouseNormDir * mouseForceStrength * 0.01; // Scale down for reasonable forces
+            var mouseForce = mouseNormDir * mouseForceStrength * 0.05; // changed from 0.001
             
             // Scale force X component back by inverse aspect ratio
             mouseForce.x = mouseForce.x / params.aspectRatio;

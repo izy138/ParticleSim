@@ -807,13 +807,28 @@
             height: 16px;
             accent-color: #a1e5afe6;
             cursor: pointer;
-            border-radius: 3px;
+            border: round;
+            border-radius: 5px;
         }
 
         input[type="checkbox"]:checked {
             background-color: #a1e5afe6;
             border-color: #508756;
         }
+
+        .mouse-checkbox-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-weight: bold;
+            color: #00180c;
+            font-size: 14px;
+        }
+
+        .mouse-checkbox-label input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
 
         /* Custom Sim Button styling */
         #create-custom-sim-btn {
@@ -870,8 +885,58 @@
             color: white;
         }
 
-        #webgpu-canvas[style*="crosshair"] {
+        /* #webgpu-canvas[style*="crosshair"] {
             cursor: crosshair !important;
+        } */
+
+
+        /* Checkbox styling */
+        input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            accent-color: #a1e5afe6;
+            cursor: pointer;
+            border: round;
+            border-radius: 5px;
+        }
+
+        input[type="checkbox"]:checked {
+            background-color: #a1e5afe6;
+            border-color: #508756;
+        }
+
+        .mouse-checkbox-label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-weight: bold;
+            color: #00180c;
+            font-size: 14px;
+            padding-top: 4px;
+            padding-bottom: 6px;
+        }
+
+        .mouse-checkbox-label input[type="checkbox"] {
+            margin-right: 8px;
+        }
+
+
+        #mouse-radius-indicator {
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            /* backdrop-filter: blur(2px); */
+            /* animation: pulse 2s ease-in-out infinite; */
+        }
+
+        #mouse-radius-indicator.attract {
+            border-color: rgba(76, 175, 80, 0.8) !important;
+            background: rgba(76, 175, 80, 0.1) !important;
+            /* box-shadow: 0 0 20px rgba(76, 175, 80, 0.3); */
+        }
+
+        #mouse-radius-indicator.repel {
+            border-color: rgba(244, 67, 54, 0.8) !important;
+            background: rgba(244, 67, 54, 0.1) !important;
+            /* box-shadow: 0 0 20px rgba(244, 67, 54, 0.3); */
         }
     </style>
 </head>
@@ -885,10 +950,11 @@
             </div>
         </div>
 
-        <!-- Right Panel - Compact Controls with Glass Effect -->
+        <!-- Right Panel -->
         <div class="right-panel" id="right-panel">
-            <!-- Fullscreen button -->
+            <!-- Fullscreen -->
             <button id="fullscreen-btn" class="fullscreen-btn">🖥️ Fullscreen</button>
+            <!-- Shortcuts -->
             <div class="panel-section">
                 <div class="keyboard-info">
                     <strong>Shortcuts:</strong><br>
@@ -901,7 +967,7 @@
                 </div>
 
             </div>
-            <!-- Simulation Controls -->
+            <!-- Sim Controls (Play / Pause/ Reset/ Enable Mouse) -->
             <div class="panel-section">
                 <h3>🎮 CONTROLS</h3>
 
@@ -913,56 +979,44 @@
 
 
                 <button id="randomize-btn" class="randomize-btn">🎲Randomize Force</button>
+
                 <div class="control-group">
-                    <!-- <h3>🖱️ Mouse Interaction</h3> -->
+                    <label class="mouse-checkbox-label">
+                        <input type="checkbox" id="mouse-interaction-checkbox">
+                        Enable Mouse
+                    </label>
+                </div>
 
-                    <div class="control-item">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="mouse-interaction-checkbox">
-                            <span class="checkbox-custom"></span>
-                            Enable Mouse
-                        </label>
-                    </div>
-
-                    <div class="control-item">
-                        <label for="mouse-force-strength-slider">Force Strength:</label>
-                        <div class="slider-container">
-                            <input type="range" id="mouse-force-strength-slider" min="10" max="200" value="50" step="5">
-                            <span id="mouse-force-strength-value">50</span>
+                <div class="mouse-force-controls">
+                    <div class="control-group">
+                        <div class="label-row">
+                            <label>Force Strength</label>
+                            <span class="slider-value" id="mouse-force-strength-value">200</span>
                         </div>
+                        <input type="range" id="mouse-force-strength-slider" min="100" max="500" value="200" step="50">
                     </div>
 
-                    <div class="control-item">
-                        <label for="mouse-force-radius-slider">Force Radius:</label>
-                        <div class="slider-container">
-                            <input type="range" id="mouse-force-radius-slider" min="0.1" max="1.0" value="0.3"
-                                step="0.05">
-                            <span id="mouse-force-radius-value">0.3</span>
+                    <div class="control-group">
+                        <div class="label-row">
+                            <label>Force Radius</label>
+                            <span class="slider-value" id="mouse-force-radius-value">0.5</span>
                         </div>
+                        <input type="range" id="mouse-force-radius-slider" min="0.1" max="1.0" value="0.5" step="0.1">
                     </div>
+                </div>
 
-                    <div class="control-item">
-                        <button id="toggle-force-type-btn" class="control-btn attract-mode">
-                            🧲 Switch to Repel
-                        </button>
-                    </div>
-
-                    <div class="control-item">
-                        <small class="help-text">
-                            <!-- 💡 Hover over canvas and move mouse to interact<br>
-                            🖱️ Click on canvas to toggle attract/repel mode<br>
-                            📌 Enable checkbox to activate mouse forces -->
-                        </small>
-                    </div>
+                <div class="control-item">
+                    <button id="toggle-force-type-btn" class="control-btn attract-mode">
+                        Switch to Repel
+                    </button>
                 </div>
 
             </div>
 
-            <!-- Configuration Generator -->
+            <!-- Config Generation-->
             <div class="panel-section">
                 <h3>🎨 GENERATE SIM</h3>
 
-                <!-- Custom Generation Sliders -->
                 <div class="control-group">
                     <div class="label-row">
                         <label>Particle Types</label>
@@ -978,8 +1032,6 @@
                     </div>
                     <input type="range" id="total-particles-slider" min="2000" max="13000" value="10000" step="1000">
                 </div>
-
-                <!-- <h3>⚙️ PHYSICS</h3> -->
 
                 <div class="control-group">
                     <div class="label-row">
@@ -1013,48 +1065,6 @@
                     <input type="range" id="particle-opacity-slider" min="0.1" max="1" step="0.05" value="0.75">
                 </div>
 
-                <div class="control-group">
-                    <!-- <h3>🖱️ Mouse Interaction</h3> -->
-
-                    <div class="control-item">
-                        <label class="checkbox-label">
-                            <input type="checkbox" id="mouse-interaction-checkbox">
-                            <span class="checkbox-custom"></span>
-                            Enable Mouse
-                        </label>
-                    </div>
-
-                    <div class="control-item">
-                        <label for="mouse-force-strength-slider">Force Strength:</label>
-                        <div class="slider-container">
-                            <input type="range" id="mouse-force-strength-slider" min="10" max="200" value="50" step="5">
-                            <span id="mouse-force-strength-value">50</span>
-                        </div>
-                    </div>
-
-                    <div class="control-item">
-                        <label for="mouse-force-radius-slider">Force Radius:</label>
-                        <div class="slider-container">
-                            <input type="range" id="mouse-force-radius-slider" min="0.1" max="1.0" value="0.3"
-                                step="0.05">
-                            <span id="mouse-force-radius-value">0.3</span>
-                        </div>
-                    </div>
-
-                    <div class="control-item">
-                        <button id="toggle-force-type-btn" class="control-btn attract-mode">
-                            🧲 Switch to Repel
-                        </button>
-                    </div>
-
-                    <div class="control-item">
-                        <small class="help-text">
-                            <!-- 💡 Hover over canvas and move mouse to interact<br>
-                            🖱️ Click on canvas to toggle attract/repel mode<br>
-                            📌 Enable checkbox to activate mouse forces -->
-                        </small>
-                    </div>
-                </div>
                 <!-- Checkboxes for Central Force and Looping Borders
                 <div class="control-group">
                     <label style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
@@ -1078,7 +1088,7 @@
                     <div id="config-display">Ready to generate...</div>
                 </div> -->
             </div>
-            <!-- Force Parameters -->
+            <!-- Force Controls -->
             <div class="panel-section">
                 <h3>🎛️ FORCES</h3>
 
@@ -1119,21 +1129,7 @@
                 </div>
             </div>
 
-
-
-            <!-- Visual Settings
-            <div class="panel-section">
-                <h3>🎨 VISUAL </h3> -->
-
-
-
-            <!-- </div> -->
-
-
-
-
-
-            <!-- Save Configuration -->
+            <!-- Save and Load Jsons-->
             <div class="panel-section">
                 <h3>💾 SAVE / LOAD SIM</h3>
 
@@ -1155,7 +1151,7 @@
         <button id="panel-toggle-btn" class="panel-toggle-btn">◀</button>
     </div>
 
-    <!-- Load scripts in the correct order -->
+    <!-- load scripts -->
     <script src="webgpu-utils.js"></script>
     <script src="config-generator.js"></script>
     <script src="config-utils.js"></script>
