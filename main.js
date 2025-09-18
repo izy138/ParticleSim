@@ -1,4 +1,4 @@
-// main.js - Updated with Responsive Canvas System
+// main.js - Updated with Responsive Canvas System and Mouse Interaction Fix
 
 // Global variables
 let simulationManager;
@@ -14,11 +14,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         showLoadingState();
 
         // Create and initialize simulation manager (includes responsive system)
-        // window.simulationManager = simulationManager;  // Expose to global scope
         simulationManager = new SimulationManager();
         const initialized = await simulationManager.initialize();
         window.simulationManager = simulationManager;
-
 
         if (initialized) {
             // Get responsive system reference
@@ -26,6 +24,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             // Create UI controller
             uiController = new UIController(simulationManager);
+            window.uiController = uiController; // CRITICAL: Make UI controller globally available
+
+            // CRITICAL FIX: Setup mouse interaction after UI controller is created
+            if (simulationManager.simulator) {
+                simulationManager.simulator.setupMouseInteraction();
+
+                // Connect UI controller to mouse interaction for button synchronization
+                if (simulationManager.simulator.mouseInteraction) {
+                    simulationManager.simulator.mouseInteraction.setUIController(uiController);
+                }
+            }
 
             // Set up additional responsive features
             setupResponsiveFeatures();
@@ -33,7 +42,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Hide loading state
             hideLoadingState();
 
-            console.log('✓ Particle Life Simulator with Responsive Canvas initialized successfully!');
+            console.log('✓ Particle Life Simulator with Responsive Canvas and Mouse Interaction initialized successfully!');
 
             // Log current setup
             logCurrentSetup();
@@ -169,11 +178,23 @@ function logCurrentSetup() {
         }
     };
 
+    // Debug function for mouse interaction
+    window.testMouseSync = () => {
+        if (simulationManager.simulator && simulationManager.simulator.mouseInteraction) {
+            console.log('Mouse interaction state:', {
+                isAttract: simulationManager.simulator.mouseInteraction.isAttract,
+                isEnabled: simulationManager.simulator.mouseInteraction.isEnabled,
+                hasUIController: !!simulationManager.simulator.mouseInteraction.uiController
+            });
+        }
+    };
+
     // console.log('=== CONSOLE COMMANDS ===');
     // console.log('testCanvasSize(width, height) - Test specific canvas size');
     // console.log('getCanvasInfo() - Get current canvas information');
     // console.log('getDeviceInfo() - Get device optimization info');
     // console.log('autoResize() - Trigger automatic resize');
+    // console.log('testMouseSync() - Check mouse interaction state');
     // console.log('Ctrl+F - Toggle fullscreen');
 }
 
@@ -228,4 +249,4 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-console.log('Main.js loaded. Particle Life Simulator with Responsive Canvas ready.');
+console.log('Main.js loaded. Particle Life Simulator with Responsive Canvas and Mouse Interaction ready.');

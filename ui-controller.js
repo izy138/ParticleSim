@@ -996,20 +996,29 @@ class UIController {
     setupMouseInteractionListeners() {
         // Checkbox toggle
         const checkbox = document.getElementById('mouse-interaction-checkbox');
-        const forceControls = document.querySelector('.mouse-force-controls'); // Add this line
+        const forceControls = document.querySelector('.mouse-force-controls');
+        const toggleButton = document.getElementById('toggle-force-type-btn');
 
         if (checkbox) {
             // Set initial state (hidden)
             if (forceControls) {
-                forceControls.style.display = 'none'; // Add this line
+                forceControls.style.display = 'none';
+            }
+            if (toggleButton) {
+                toggleButton.style.display = 'none';
             }
 
             checkbox.addEventListener('change', (e) => {
                 const enabled = e.target.checked;
 
-                // Show/hide force controls (Add these lines)
+                // Show/hide force controls
                 if (forceControls) {
                     forceControls.style.display = enabled ? 'block' : 'none';
+                }
+
+                // Show/hide toggle button
+                if (toggleButton) {
+                    toggleButton.style.display = enabled ? 'block' : 'none';
                 }
 
                 if (this.simulator && this.simulator.setMouseInteractionEnabled) {
@@ -1045,25 +1054,44 @@ class UIController {
             });
         }
 
-        // Toggle force type button
+        // Toggle force type button - now syncs with MouseInteraction
+        if (toggleButton) {
+            toggleButton.addEventListener('click', () => {
+                if (this.simulator && this.simulator.mouseInteraction) {
+                    // Call the MouseInteraction method directly
+                    this.simulator.mouseInteraction.toggleForceType();
+                    // The button will be updated via the callback from MouseInteraction
+                }
+            });
+        }
+    }
+
+    // NEW: Method to update the toggle button (called by MouseInteraction)
+    updateToggleButton() {
         const toggleBtn = document.getElementById('toggle-force-type-btn');
-        toggleBtn.addEventListener('click', () => {
-            if (this.simulator && this.simulator.mouseInteraction) {
-                this.simulator.mouseInteraction.toggleForceType(); // Use the MouseInteraction method
+        if (toggleBtn && this.simulator && this.simulator.mouseInteraction) {
+            const isAttract = this.simulator.mouseInteraction.isAttract;
+
+            // Clear existing classes
+            toggleBtn.classList.remove('attract-mode', 'repel-mode');
+
+            if (isAttract) {
+                toggleBtn.textContent = 'Left-Click to Repel';
+                toggleBtn.classList.add('attract-mode');
+            } else {
+                toggleBtn.textContent = 'Left-Click to Attract';
+                toggleBtn.classList.add('repel-mode');
             }
-        });
 
-
+            console.log("Button updated via UI Controller - isAttract:", isAttract);
+        }
     }
 
     updateCanvasCursor(enabled) {
         const canvas = document.getElementById('webgpu-canvas');
         if (canvas) {
             if (enabled) {
-                //     canvas.style.cursor = 'crosshair';
-                //     // canvas.title = 'Mouse interaction enabled - Click to toggle attract/repel';
-
-                this.canvas.style.cursor = 'none';
+                canvas.style.cursor = 'none';
             } else {
                 canvas.style.cursor = 'default';
                 canvas.title = '';
@@ -1071,18 +1099,6 @@ class UIController {
         }
     }
 
-    updateToggleButton() {
-        const toggleBtn = document.getElementById('toggle-force-type-btn');
-        if (toggleBtn && this.simulator && this.simulator.mouseInteraction) {
-            if (this.simulator.mouseInteraction.isAttract) {
-                toggleBtn.textContent = ' Switch to Repel';
-                toggleBtn.className = 'control-btn attract-mode';
-            } else {
-                toggleBtn.textContent = 'Switch to Attract';
-                toggleBtn.className = 'control-btn repel-mode';
-            }
-        }
-    }
 }
 
 // Export for use in other modules

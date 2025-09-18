@@ -316,10 +316,21 @@ class SimulationManager {
                     this.responsiveSystem.setSimulator(this.simulator);
                     this.responsiveSystem.updateSimulationConfig();
                 }
+
+                // CRITICAL FIX: Reconnect mouse interaction after creating new simulator
+                this.simulator.setupMouseInteraction();
+
+                // Check if mouse interaction was previously enabled and restore it
                 const checkbox = document.getElementById('mouse-interaction-checkbox');
                 if (checkbox && checkbox.checked) {
                     this.simulator.setMouseInteractionEnabled(true);
+
+                    // Connect UI controller for button synchronization
+                    if (window.uiController && this.simulator.mouseInteraction) {
+                        this.simulator.mouseInteraction.setUIController(window.uiController);
+                    }
                 }
+
                 // Store baseline and update UI
                 this.simulator.storeCurrentAsBaseline();
                 this.syncSlidersWithConfig();
@@ -333,6 +344,7 @@ class SimulationManager {
 
                 console.log("✓ New complete configuration created and running!");
                 return true;
+
 
             } else {
                 throw new Error("Failed to initialize new simulator");

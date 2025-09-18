@@ -959,6 +959,7 @@
                 <div class="keyboard-info">
                     <strong>Shortcuts:</strong><br>
                     <strong>SPACE</strong> - Randomize<br>
+                    <!-- <strong>Left-Click</strong> - Attract/Repel<br> -->
                     <strong>N</strong> - New Config<br>
                     <strong>P</strong> - Pause/Resume<br>
                     <strong>R</strong> - Reset Positions<br>
@@ -987,13 +988,15 @@
                     </label>
                 </div>
 
+
                 <div class="mouse-force-controls">
                     <div class="control-group">
                         <div class="label-row">
                             <label>Force Strength</label>
                             <span class="slider-value" id="mouse-force-strength-value">200</span>
                         </div>
-                        <input type="range" id="mouse-force-strength-slider" min="100" max="500" value="200" step="50">
+                        <input type="range" id="mouse-force-strength-slider" min="100" max="1000" value="500"
+                            step="100">
                     </div>
 
                     <div class="control-group">
@@ -1001,13 +1004,13 @@
                             <label>Force Radius</label>
                             <span class="slider-value" id="mouse-force-radius-value">0.5</span>
                         </div>
-                        <input type="range" id="mouse-force-radius-slider" min="0.1" max="1.0" value="0.5" step="0.1">
+                        <input type="range" id="mouse-force-radius-slider" min="0.1" max="2.0" value="0.7" step="0.1">
                     </div>
                 </div>
 
                 <div class="control-item">
                     <button id="toggle-force-type-btn" class="control-btn attract-mode">
-                        Switch to Repel
+                        Left-Click to Repel
                     </button>
                 </div>
 

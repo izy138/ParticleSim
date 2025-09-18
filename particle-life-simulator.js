@@ -1078,12 +1078,9 @@ class ParticleLifeSimulator {
 
     // mouse
     setupMouseInteraction() {
-        // Create mouse interaction system
-        this.mouseInteraction = new MouseInteraction(this.canvasId);
-
-        // Create mouse uniform buffer
-        this.createMouseUniformBuffer();
-
+        if (!this.mouseInteraction) {
+            this.mouseInteraction = new MouseInteraction('webgpu-canvas');
+        }
     }
 
 
@@ -1158,15 +1155,28 @@ class ParticleLifeSimulator {
         device.queue.writeBuffer(this.mouseUniformBuffer, 0, mouseData);
     }
 
-    // Method to enable/disable mouse interaction
+    // / Method to enable/disable mouse interaction
     setMouseInteractionEnabled(enabled) {
+        if (!this.mouseInteraction) {
+            this.setupMouseInteraction();
+        }
+
         if (this.mouseInteraction) {
             this.mouseInteraction.setEnabled(enabled);
+
+            // CRITICAL FIX: Connect UI controller reference for button synchronization
+            if (window.uiController && !this.mouseInteraction.uiController) {
+                this.mouseInteraction.setUIController(window.uiController);
+            }
         }
     }
 
     // Method to set mouse force parameters
     setMouseForceParameters(strength, radius) {
+        if (!this.mouseInteraction) {
+            this.setupMouseInteraction();
+        }
+
         if (this.mouseInteraction) {
             if (strength !== null) this.mouseInteraction.setForceStrength(strength);
             if (radius !== null) this.mouseInteraction.setForceRadius(radius);
@@ -1175,6 +1185,10 @@ class ParticleLifeSimulator {
 
     // Method to toggle attract/repel
     toggleMouseForceType() {
+        if (!this.mouseInteraction) {
+            this.setupMouseInteraction();
+        }
+
         if (this.mouseInteraction) {
             this.mouseInteraction.toggleForceType();
         }
