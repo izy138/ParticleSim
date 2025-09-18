@@ -1,4 +1,4 @@
-// Updated mouse-interaction.js with proper button synchronization
+// Updated mouse-interaction.js with fix for initial center force issue
 
 class MouseInteraction {
     constructor(canvasId) {
@@ -6,6 +6,7 @@ class MouseInteraction {
         this.canvas = document.getElementById(canvasId);
         this.mousePos = { x: 0, y: 0 };
         this.isEnabled = false;
+        this.hasValidMousePosition = false; // NEW: Track if we have a valid mouse position
 
         // Read current values from sliders
         const strengthSlider = document.getElementById('mouse-force-strength-slider');
@@ -25,7 +26,7 @@ class MouseInteraction {
         this.createRadiusIndicator();
     }
 
-    // NEW: Method to set UI controller reference
+    // Method to set UI controller reference
     setUIController(uiController) {
         this.uiController = uiController;
     }
@@ -36,10 +37,12 @@ class MouseInteraction {
         this.canvas.addEventListener('mousemove', (event) => {
             this.updateMousePosition(event);
             this.updateRadiusIndicator(event);
+            this.hasValidMousePosition = true; // NEW: Mark that we have a valid position
         });
 
         this.canvas.addEventListener('mouseleave', () => {
             this.isEnabled = false;
+            this.hasValidMousePosition = false; // NEW: Reset valid position flag
             this.hideRadiusIndicator();
         });
 
@@ -49,17 +52,18 @@ class MouseInteraction {
                 this.isEnabled = true;
                 this.showRadiusIndicator();
                 this.updateRadiusIndicatorColor();
+                // Note: hasValidMousePosition will be set to true on first mousemove
             }
         });
 
-        // FIXED: Canvas click handler now calls both local and UI updates
+        // Canvas click handler
         this.canvas.addEventListener('click', () => {
-            if (this.isEnabled) {
+            if (this.isEnabled && this.hasValidMousePosition) { // NEW: Only toggle if we have valid position
                 this.isAttract = !this.isAttract;
-                // this.showForceTypeIndicator();
+                this.showForceTypeIndicator();
                 this.updateRadiusIndicatorColor();
 
-                // CRITICAL FIX: Update UI button through the UI controller
+                // Update UI button through the UI controller
                 if (this.uiController && this.uiController.updateToggleButton) {
                     this.uiController.updateToggleButton();
                 }
@@ -82,7 +86,8 @@ class MouseInteraction {
         return {
             x: this.mousePos.x,
             y: this.mousePos.y,
-            enabled: this.isEnabled ? 1.0 : 0.0,
+            // NEW: Only enable force if we have both enabled state AND valid mouse position
+            enabled: (this.isEnabled && this.hasValidMousePosition) ? 1.0 : 0.0,
             strength: this.isAttract ? this.forceStrength : -this.forceStrength,
             radius: this.forceRadius
         };
@@ -92,31 +97,19 @@ class MouseInteraction {
         this.isEnabled = enabled;
 
         if (this.canvas) {
-            this.canvas.style.cursor = 'none';
+            this.canvas.style.cursor = enabled ? 'none' : 'default';
         }
 
         if (enabled) {
-            this.showRadiusIndicator();
-            this.forceMousePositionUpdate();
+            // Don't force position update or show indicator until mouse actually moves
+            // this.forceMousePositionUpdate(); // REMOVED: This was causing the center force issue
         } else {
+            this.hasValidMousePosition = false; // NEW: Reset when disabled
             this.hideRadiusIndicator();
         }
     }
 
-    // FIX: Force mouse position update when enabling
-    forceMousePositionUpdate() {
-        if (this.canvas) {
-            const rect = this.canvas.getBoundingClientRect();
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-
-            const fakeEvent = {
-                clientX: centerX,
-                clientY: centerY
-            };
-            this.updateMousePosition(fakeEvent);
-        }
-    }
+    // REMOVED: forceMousePositionUpdate method since it was causing the issue
 
     setForceStrength(strength) {
         this.forceStrength = Math.abs(strength);
@@ -126,45 +119,44 @@ class MouseInteraction {
         this.forceRadius = Math.max(0.1, Math.min(1.0, radius));
     }
 
-    // UPDATED: This method should only handle the mouse interaction state
-    // UI button updates are handled through the UI controller
     toggleForceType() {
-        this.isAttract = !this.isAttract;
-        // this.showForceTypeIndicator();
-        this.updateRadiusIndicatorColor();
+        if (this.hasValidMousePosition) { // NEW: Only toggle if we have valid position
+            this.isAttract = !this.isAttract;
+            this.showForceTypeIndicator();
+            this.updateRadiusIndicatorColor();
 
-        // Update UI button through the UI controller
-        if (this.uiController && this.uiController.updateToggleButton) {
-            this.uiController.updateToggleButton();
+            // Update UI button through the UI controller
+            if (this.uiController && this.uiController.updateToggleButton) {
+                this.uiController.updateToggleButton();
+            }
         }
     }
 
-    //REPEL / ATTRACT CHANGE INDICATOR REMOVED
-    // showForceTypeIndicator() {
-    //     const indicator = document.createElement('div');
-    //     indicator.style.cssText = `
-    //         position: fixed;
-    //         top: 50%;
-    //         left: 50%;
-    //         transform: translate(-50%, -50%);
-    //         padding: 10px 20px;
-    //         background: ${this.isAttract ? '#4CAF50' : '#F44336'};
-    //         color: white;
-    //         border-radius: 20px;
-    //         font-weight: bold;
-    //         z-index: 1000;
-    //         pointer-events: none;
-    //         opacity: 0.9;
-    //         transition: opacity 0.3s;
-    //     `;
-    //     indicator.textContent = this.isAttract ? 'Attract Mode' : 'Repel Mode';
-    //     document.body.appendChild(indicator);
+    showForceTypeIndicator() {
+        const indicator = document.createElement('div');
+        indicator.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 10px 20px;
+            background: ${this.isAttract ? '#4CAF50' : '#F44336'};
+            color: white;
+            border-radius: 20px;
+            font-weight: bold;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0.9;
+            transition: opacity 0.3s;
+        `;
+        indicator.textContent = this.isAttract ? 'Attract Mode' : 'Repel Mode';
+        document.body.appendChild(indicator);
 
-    //     setTimeout(() => {
-    //         indicator.style.opacity = '0';
-    //         setTimeout(() => indicator.remove(), 300);
-    //     }, 1000);
-    // }
+        setTimeout(() => {
+            indicator.style.opacity = '0';
+            setTimeout(() => indicator.remove(), 300);
+        }, 1000);
+    }
 
     createRadiusIndicator() {
         if (document.getElementById('mouse-radius-indicator')) {
@@ -188,7 +180,7 @@ class MouseInteraction {
     }
 
     updateRadiusIndicator(event) {
-        if (!this.radiusIndicator || !this.isEnabled) return;
+        if (!this.radiusIndicator || !this.isEnabled || !this.hasValidMousePosition) return; // NEW: Check valid position
 
         const rect = this.canvas.getBoundingClientRect();
         const radiusPixels = (this.forceRadius * rect.height) / 2 * 0.09;
@@ -209,7 +201,7 @@ class MouseInteraction {
     }
 
     showRadiusIndicator() {
-        if (this.radiusIndicator) {
+        if (this.radiusIndicator && this.hasValidMousePosition) { // NEW: Only show if valid position
             this.radiusIndicator.style.display = 'block';
             this.updateRadiusIndicatorColor();
         }
