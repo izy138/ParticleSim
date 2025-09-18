@@ -66,6 +66,8 @@ class UIController {
 
         // Setup drag and drop for configuration files
         this.setupDragAndDrop();
+        // Add these mouse interaction event listeners
+        this.setupMouseInteractionListeners();
     }
 
     setupSliders() {
@@ -990,6 +992,113 @@ class UIController {
             }
         });
     }
+
+    setupMouseInteractionListeners() {
+        // Checkbox toggle
+        const checkbox = document.getElementById('mouse-interaction-checkbox');
+        const forceControls = document.querySelector('.mouse-force-controls');
+        const toggleButton = document.getElementById('toggle-force-type-btn');
+
+        if (checkbox) {
+            // Set initial state (hidden)
+            if (forceControls) {
+                forceControls.style.display = 'none';
+            }
+            if (toggleButton) {
+                toggleButton.style.display = 'none';
+            }
+
+            checkbox.addEventListener('change', (e) => {
+                const enabled = e.target.checked;
+
+                // Show/hide force controls
+                if (forceControls) {
+                    forceControls.style.display = enabled ? 'block' : 'none';
+                }
+
+                // Show/hide toggle button
+                if (toggleButton) {
+                    toggleButton.style.display = enabled ? 'block' : 'none';
+                }
+
+                if (this.simulator && this.simulator.setMouseInteractionEnabled) {
+                    this.simulator.setMouseInteractionEnabled(enabled);
+                    this.updateCanvasCursor(enabled);
+                }
+            });
+        }
+
+        // Force strength slider
+        const strengthSlider = document.getElementById('mouse-force-strength-slider');
+        if (strengthSlider) {
+            strengthSlider.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                document.getElementById('mouse-force-strength-value').textContent = value;
+
+                if (this.simulator && this.simulator.setMouseForceParameters) {
+                    this.simulator.setMouseForceParameters(value, null);
+                }
+            });
+        }
+
+        // Force radius slider
+        const radiusSlider = document.getElementById('mouse-force-radius-slider');
+        if (radiusSlider) {
+            radiusSlider.addEventListener('input', (e) => {
+                const value = parseFloat(e.target.value);
+                document.getElementById('mouse-force-radius-value').textContent = value;
+
+                if (this.simulator && this.simulator.setMouseForceParameters) {
+                    this.simulator.setMouseForceParameters(null, value);
+                }
+            });
+        }
+
+        // Toggle force type button - now syncs with MouseInteraction
+        if (toggleButton) {
+            toggleButton.addEventListener('click', () => {
+                if (this.simulator && this.simulator.mouseInteraction) {
+                    // Call the MouseInteraction method directly
+                    this.simulator.mouseInteraction.toggleForceType();
+                    // The button will be updated via the callback from MouseInteraction
+                }
+            });
+        }
+    }
+
+    // NEW: Method to update the toggle button (called by MouseInteraction)
+    updateToggleButton() {
+        const toggleBtn = document.getElementById('toggle-force-type-btn');
+        if (toggleBtn && this.simulator && this.simulator.mouseInteraction) {
+            const isAttract = this.simulator.mouseInteraction.isAttract;
+
+            // Clear existing classes
+            toggleBtn.classList.remove('attract-mode', 'repel-mode');
+
+            if (isAttract) {
+                toggleBtn.textContent = 'Left-Click to Repel';
+                toggleBtn.classList.add('attract-mode');
+            } else {
+                toggleBtn.textContent = 'Left-Click to Attract';
+                toggleBtn.classList.add('repel-mode');
+            }
+
+            console.log("Button updated via UI Controller - isAttract:", isAttract);
+        }
+    }
+
+    updateCanvasCursor(enabled) {
+        const canvas = document.getElementById('webgpu-canvas');
+        if (canvas) {
+            if (enabled) {
+                canvas.style.cursor = 'none';
+            } else {
+                canvas.style.cursor = 'default';
+                canvas.title = '';
+            }
+        }
+    }
+
 }
 
 // Export for use in other modules

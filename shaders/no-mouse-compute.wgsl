@@ -1,3 +1,5 @@
+// Updated Particle Compute Shader with Aspect Ratio Correction
+
 @group(0) @binding(0) var<storage, read> particlesIn: array<f32>;
 @group(0) @binding(1) var<storage, read_write> particlesOut: array<f32>;
 
@@ -8,8 +10,8 @@ struct Params {
     friction: f32,
     centralForce: f32,
     numTypes: f32,
-    aspectRatio: f32,
-    padding: f32,
+    aspectRatio: f32,    // NEW: Add aspect ratio to params
+    padding: f32,        // NEW: Padding for alignment
 };
 
 @group(0) @binding(2) var<uniform> params: Params;
@@ -19,17 +21,6 @@ struct Params {
 @group(0) @binding(5) var<storage, read> radiusMatrix: array<f32>;
 @group(0) @binding(6) var<storage, read> collisionStrengthMatrix: array<f32>;
 @group(0) @binding(7) var<storage, read> collisionRadiusMatrix: array<f32>;
-
-// NEW: Mouse interaction uniform buffer
-struct MouseData {
-    position: vec2<f32>,    // Mouse position in normalized coordinates
-    enabled: f32,           // 1.0 if enabled, 0.0 if disabled
-    strength: f32,          // Force strength (positive for attract, negative for repel)
-    radius: f32,            // Radius of mouse influence
-    padding: vec3<f32>,     // Padding for alignment
-};
-
-@group(0) @binding(8) var<uniform> mouseData: MouseData;
 
 @compute @workgroup_size(64)
 fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
@@ -46,8 +37,6 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     let vel = vec2<f32>(particlesIn[baseIdx + 2u], particlesIn[baseIdx + 3u]);
 
     var force = vec2<f32>(0.0);
-    
-    // Original particle-to-particle forces
     for (var j = 0u; j < numParticles; j++) {
         if (j == idx) { continue; }
 
@@ -88,32 +77,6 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
             // Scale repulsion X component back by inverse aspect ratio
             repulseContrib.x = repulseContrib.x / params.aspectRatio;
             force -= repulseContrib;
-        }
-    }
-
-    // NEW: Mouse interaction force
-    if (mouseData.enabled > 0.5) {
-        // Calculate distance from particle to mouse with aspect ratio correction
-        var mouseDir = mouseData.position - pos;
-        mouseDir.x = mouseDir.x * params.aspectRatio;
-        
-        let mouseDist = length(mouseDir);
-        
-        if (mouseDist < mouseData.radius && mouseDist > 0.001) {
-            // Normalize direction vector
-            let mouseNormDir = mouseDir / mouseDist;
-            
-            // Calculate force strength based on distance (stronger when closer)
-            let distanceFactor = 1.0 - (mouseDist / mouseData.radius);
-            let mouseForceStrength = mouseData.strength * distanceFactor * distanceFactor; // Quadratic falloff
-            
-            // Apply mouse force
-            var mouseForce = mouseNormDir * mouseForceStrength * 0.05; // changed from 0.001
-            
-            // Scale force X component back by inverse aspect ratio
-            mouseForce.x = mouseForce.x / params.aspectRatio;
-            
-            force += mouseForce;
         }
     }
 

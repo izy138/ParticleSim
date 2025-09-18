@@ -301,6 +301,9 @@ class SimulationManager {
 
             // Create brand new simulator with the generated config
             this.simulator = new ParticleLifeSimulator('webgpu-canvas', newConfig);
+            // if (this.simulator.setupMouseInteraction) {
+            //     this.simulator.setupMouseInteraction();
+            // }
 
             console.log("Initializing new simulator...");
             const initialized = await this.simulator.initialize();
@@ -312,6 +315,20 @@ class SimulationManager {
                 if (this.responsiveSystem) {
                     this.responsiveSystem.setSimulator(this.simulator);
                     this.responsiveSystem.updateSimulationConfig();
+                }
+
+                // CRITICAL FIX: Reconnect mouse interaction after creating new simulator
+                this.simulator.setupMouseInteraction();
+
+                // Check if mouse interaction was previously enabled and restore it
+                const checkbox = document.getElementById('mouse-interaction-checkbox');
+                if (checkbox && checkbox.checked) {
+                    this.simulator.setMouseInteractionEnabled(true);
+
+                    // Connect UI controller for button synchronization
+                    if (window.uiController && this.simulator.mouseInteraction) {
+                        this.simulator.mouseInteraction.setUIController(window.uiController);
+                    }
                 }
 
                 // Store baseline and update UI
@@ -327,6 +344,7 @@ class SimulationManager {
 
                 console.log("✓ New complete configuration created and running!");
                 return true;
+
 
             } else {
                 throw new Error("Failed to initialize new simulator");
@@ -355,7 +373,7 @@ class SimulationManager {
             const numTypes = parseInt(document.getElementById('particle-types-slider')?.value) || 5;
             const numParticles = parseInt(document.getElementById('total-particles-slider')?.value) || 12000;
 
-            // FIX: Add null checking for missing checkboxes
+            //  Add null checking for missing checkboxes
             const centralForceCheckbox = document.getElementById('central-force-checkbox');
             const centralForce = centralForceCheckbox?.checked ? 1 : 0;
 
@@ -365,7 +383,7 @@ class SimulationManager {
             const friction = parseFloat(document.getElementById('friction-slider')?.value) || 50;
             const forceScale = parseFloat(document.getElementById('force-scale-slider')?.value) || 1.0;
 
-            // FIX: Convert particle size from display value to actual value
+            //  Convert particle size from display value to actual value
             const sizeSliderValue = parseFloat(document.getElementById('particle-size-slider')?.value) || 7;
             const particleSize = sizeSliderValue / 1000; // Convert 7 to 0.007
 
