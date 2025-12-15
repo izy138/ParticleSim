@@ -46,7 +46,7 @@ class WebGPUUtils {
           }
           
           if (!adapter) {
-              this.showError("Couldn't request WebGPU adapter.");
+              this.showError("Couldn't request WebGPU adapter. On Chrome, turn on hardware acceleration / graphics acceleration. On Safari, go to Settings > Advanced > Show features for web developers > Feature Flags > Enable WebGPU.");
               return null;
           }
           
