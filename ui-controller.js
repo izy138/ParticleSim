@@ -242,12 +242,26 @@ class UIController {
             });
         }
 
-        // Total Particles Slider
+        // Total Particles Slider - with dynamic simulation restart
         const totalParticlesSlider = document.getElementById('total-particles-slider');
         if (totalParticlesSlider) {
+            let updateTimeout = null;
+            
             totalParticlesSlider.addEventListener('input', () => {
-                const value = totalParticlesSlider.value;
+                const value = parseInt(totalParticlesSlider.value);
                 document.getElementById('total-particles-value').textContent = value;
+                
+                // Debounce the update to avoid too many restarts while dragging
+                clearTimeout(updateTimeout);
+                updateTimeout = setTimeout(async () => {
+                    try {
+                        if (this.simulationManager && this.simulationManager.simulator) {
+                            await this.simulationManager.updateParticleCount(value);
+                        }
+                    } catch (error) {
+                        console.error('Error updating particle count:', error);
+                    }
+                }, 300); // Wait 300ms after user stops dragging
             });
         }
 
@@ -475,8 +489,10 @@ class UIController {
 
         const totalParticlesSlider = document.getElementById('total-particles-slider');
         if (totalParticlesSlider) {
-            totalParticlesSlider.value = this.simulator.config.particleCount || 12000;
-            document.getElementById('total-particles-value').textContent = totalParticlesSlider.value;
+            // Use numParticles (internal format) or particleCount (JSON format)
+            const particleCount = this.simulator.config.numParticles || this.simulator.config.particleCount || 12000;
+            totalParticlesSlider.value = particleCount;
+            document.getElementById('total-particles-value').textContent = particleCount;
         }
 
         const centralForceSlider = document.getElementById('central-force-checkbox');

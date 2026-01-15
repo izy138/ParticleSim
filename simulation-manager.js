@@ -490,6 +490,61 @@ class SimulationManager {
     }
 
     /**
+     * Update particle count dynamically while keeping current configuration
+     * @param {number} newParticleCount - The new particle count
+     */
+    async updateParticleCount(newParticleCount) {
+        if (!this.simulator) {
+            console.error("Simulator not initialized");
+            return;
+        }
+
+        try {
+            const wasRunning = this.simulator.isRunning;
+            const wasPaused = this.simulator.isPaused;
+
+            // Get current configuration
+            const currentConfig = {
+                particleCount: newParticleCount,
+                species: this.simulator.config.species,
+                simulationSize: this.simulator.config.simulationSize || this.getCanvasInfo(),
+                friction: this.simulator.config.friction,
+                centralForce: this.simulator.config.centralForce,
+                symmetricForces: this.simulator.config.symmetricForces || false,
+                particleSize: this.simulator.config.particleSize,
+                particleOpacity: this.simulator.config.particleOpacity
+            };
+
+            // Update canvas size if available
+            const canvasInfo = this.getCanvasInfo();
+            if (canvasInfo) {
+                currentConfig.simulationSize = [canvasInfo.width, canvasInfo.height];
+            }
+
+            // Use applyNewConfiguration which will call updateParticleCount internally
+            await this.simulator.applyNewConfiguration(currentConfig);
+
+            // Update UI
+            this.syncSlidersWithConfig();
+            this.updateConfigDisplay(currentConfig);
+
+            // Restart if it was running before
+            if (wasRunning && !this.simulator.isRunning) {
+                this.simulator.start();
+                if (wasPaused) {
+                    this.simulator.pause();
+                }
+            }
+
+            console.log(`✓ Particle count updated to ${newParticleCount}`);
+            return true;
+        } catch (error) {
+            console.error("Error updating particle count:", error);
+            throw error;
+        }
+    }
+
+    /**
      * Load and apply a configuration from file
      * @param {Object} config - The configuration object to load
      */
@@ -685,6 +740,15 @@ class SimulationManager {
         if (opacitySlider) {
             opacitySlider.value = this.simulator.config.particleOpacity;
             document.getElementById('particle-opacity-value').textContent = this.simulator.config.particleOpacity;
+        }
+
+        // Sync particle count slider
+        const totalParticlesSlider = document.getElementById('total-particles-slider');
+        if (totalParticlesSlider) {
+            // Use numParticles (internal format) or particleCount (JSON format)
+            const particleCount = this.simulator.config.numParticles || this.simulator.config.particleCount || 12000;
+            totalParticlesSlider.value = particleCount;
+            document.getElementById('total-particles-value').textContent = particleCount;
         }
 
         // console.log("Sliders synced with configuration");
