@@ -1726,7 +1726,7 @@ class ParticleLifeSimulator {
             this.lastFrameTime = now;
 
             // Scale dt down by 50% to slow simulation
-            dt = dt * 0.3;
+            dt = dt * 0.4;
 
             // Update uniform buffer with frame-rate independent dt
             if (!this.isPaused) {
@@ -2150,6 +2150,14 @@ class ParticleLifeSimulator {
         // Destroy old buffers
         this.particleBuffers.forEach(buffer => buffer.destroy());
 
+        // Destroy binning buffers if they exist (they depend on particle count)
+        if (this.sortedParticleBuffer) {
+            this.sortedParticleBuffer.destroy();
+            this.sortedParticleBuffer = null;
+        }
+        // Note: binCountBuffer, binOffsetBuffer, etc. don't depend on particle count,
+        // only on grid dimensions, so we don't need to recreate them
+
         // Create new particle buffers
         const bufferSize = particleData.byteLength;
         this.particleBuffers = [
@@ -2173,6 +2181,17 @@ class ParticleLifeSimulator {
 
         // Update config
         this.config.numParticles = newCount;
+
+        // Recreate sorted particle buffer with new size if binning is enabled
+        // Check if binning was initialized (binCount > 0 means buffers were created)
+        if (this.useBinning && this.binCount > 0) {
+            this.sortedParticleBuffer = device.createBuffer({
+                size: newCount * 5 * 4, // 5 floats per particle, 4 bytes per float
+                usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
+                label: 'sorted-particle-buffer'
+            });
+            console.log(`Recreated sortedParticleBuffer with size: ${newCount * 5 * 4} bytes (${newCount} particles)`);
+        }
 
         // Recreate bind groups with new buffers
         this.createBindGroups();

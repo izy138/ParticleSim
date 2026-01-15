@@ -248,7 +248,14 @@ class UIController {
             let updateTimeout = null;
             
             totalParticlesSlider.addEventListener('input', () => {
-                const value = parseInt(totalParticlesSlider.value);
+                let value = parseInt(totalParticlesSlider.value);
+                
+                // Cap at 20000 particles
+                if (value > 20000) {
+                    value = 20000;
+                    totalParticlesSlider.value = value;
+                }
+                
                 document.getElementById('total-particles-value').textContent = value;
                 
                 // Debounce the update to avoid too many restarts while dragging

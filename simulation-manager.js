@@ -499,6 +499,12 @@ class SimulationManager {
             return;
         }
 
+        // Cap at 20000 particles
+        if (newParticleCount > 20000) {
+            newParticleCount = 20000;
+            console.warn(`Particle count capped at 20000`);
+        }
+
         try {
             const wasRunning = this.simulator.isRunning;
             const wasPaused = this.simulator.isPaused;
