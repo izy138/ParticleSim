@@ -172,7 +172,7 @@ class ConfigGenerator {
         const sum = weights.reduce((a, b) => a + b);
         return weights.map(w => w / sum);
     }
-    generateLavaLampConfiguration(numTypes = 5, numParticles = 12000, forceScale = 1, radius = 20, friction = 50, particleSize = 0.007, particleOpacity = 0.75) {
+    generateLavaLampConfiguration(numTypes = 5, numParticles = 12000, forceScale = 1, radius = 20, friction = 30, particleSize = 0.007, particleOpacity = 0.75) {
         const colors = this.generateColors(numTypes);
         const species = [];
         const spawnWeights = this.generateImbalancedPopulations(numTypes);

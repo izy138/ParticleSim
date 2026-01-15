@@ -252,7 +252,7 @@ class SimulationManager {
             const loopingBorders = loopingBordersCheckbox?.checked ? 1 : 0;
 
             // Get other parameters with null checking
-            const friction = parseFloat(document.getElementById('friction-slider')?.value) || 50;
+            const friction = parseFloat(document.getElementById('friction-slider')?.value) || 30;
 
             // FIX: Convert particle size from display value to actual value
             const sizeSliderValue = parseFloat(document.getElementById('particle-size-slider')?.value) || 7;
@@ -380,7 +380,7 @@ class SimulationManager {
             const loopingBordersCheckbox = document.getElementById('looping-borders-checkbox');
             const loopingBorders = loopingBordersCheckbox?.checked ? 1 : 0;
 
-            const friction = parseFloat(document.getElementById('friction-slider')?.value) || 50;
+            const friction = parseFloat(document.getElementById('friction-slider')?.value) || 30;
             const forceScale = parseFloat(document.getElementById('force-scale-slider')?.value) || 1.0;
 
             //  Convert particle size from display value to actual value
@@ -389,19 +389,9 @@ class SimulationManager {
 
             const particleOpacity = parseFloat(document.getElementById('particle-opacity-slider')?.value) || 0.75;
 
-            // Use device-optimized particle count if responsive system suggests it
-            let finalParticleCount = numParticles;
-            if (this.responsiveSystem) {
-                const recommendedCount = this.responsiveSystem.getRecommendedParticleCount();
-                if (numParticles > recommendedCount) {
-                    finalParticleCount = recommendedCount;
-                    // Update the slider to reflect the actual count used (with null checking)
-                    const particleSlider = document.getElementById('total-particles-slider');
-                    const particleValue = document.getElementById('total-particles-value');
-                    if (particleSlider) particleSlider.value = finalParticleCount;
-                    if (particleValue) particleValue.textContent = finalParticleCount;
-                }
-            }
+            // Use the slider value directly for custom sim - respect user's choice
+            // Don't apply responsive system cap when user explicitly creates a custom sim
+            const finalParticleCount = numParticles;
 
             // Use current force parameters instead of random ones
             const radius = 20; // Use default radius
@@ -431,10 +421,27 @@ class SimulationManager {
                 newConfig.simulationSize = [canvasInfo.width, canvasInfo.height];
             }
 
+            // Ensure both particleCount and numParticles are set to the user's chosen value
+            // This ensures the config is correct regardless of which property is checked
+            newConfig.particleCount = finalParticleCount;
+            newConfig.numParticles = finalParticleCount;
+
+            console.log("Custom sim config before creating simulator:", {
+                particleCount: newConfig.particleCount,
+                numParticles: newConfig.numParticles,
+                finalParticleCount: finalParticleCount,
+                sliderValue: document.getElementById('total-particles-slider')?.value
+            });
+
             // Create brand new simulator with the custom config
             this.simulator = new ParticleLifeSimulator('webgpu-canvas', newConfig);
 
             const initialized = await this.simulator.initialize();
+            
+            console.log("After initialization:", {
+                configParticleCount: this.simulator.config.particleCount,
+                configNumParticles: this.simulator.config.numParticles
+            });
 
             if (initialized) {
                 // Reconnect responsive system
@@ -660,7 +667,7 @@ class SimulationManager {
         }
         return this.uiController;
     }
-    generateLavaLampConfiguration(numTypes = 5, numParticles = 12000, forceScale = 1, radius = 20, friction = 50, particleSize = 0.007, particleOpacity = 0.75) {
+    generateLavaLampConfiguration(numTypes = 5, numParticles = 12000, forceScale = 1, radius = 20, friction = 30, particleSize = 0.007, particleOpacity = 0.75) {
         const generator = this.getConfigGenerator();
         return generator.generateLavaLampConfiguration(numTypes, numParticles, forceScale, radius, friction, particleSize, particleOpacity);
     }
@@ -752,9 +759,17 @@ class SimulationManager {
         const totalParticlesSlider = document.getElementById('total-particles-slider');
         if (totalParticlesSlider) {
             // Use numParticles (internal format) or particleCount (JSON format)
-            const particleCount = this.simulator.config.numParticles || this.simulator.config.particleCount || 12000;
-            totalParticlesSlider.value = particleCount;
-            document.getElementById('total-particles-value').textContent = particleCount;
+            // BUT: Don't override slider if it was just set by user for custom sim
+            // Only sync if the values are significantly different (more than 1000 particles)
+            const configParticleCount = this.simulator.config.numParticles || this.simulator.config.particleCount || 12000;
+            const currentSliderValue = parseInt(totalParticlesSlider.value) || 0;
+            
+            // Only update slider if config value is very different (likely from a different source)
+            // This prevents overriding user's slider value when creating custom sim
+            if (Math.abs(configParticleCount - currentSliderValue) > 1000) {
+                totalParticlesSlider.value = configParticleCount;
+                document.getElementById('total-particles-value').textContent = configParticleCount;
+            }
         }
 
         // console.log("Sliders synced with configuration");

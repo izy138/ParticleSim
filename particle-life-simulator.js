@@ -125,7 +125,7 @@ class ParticleLifeSimulator {
             this.config.numParticles = config.particleCount;
             this.config.numTypes = config.species.length;
             this.config.simulationSize = config.simulationSize;
-            this.config.friction = parseFloat(config.friction) || 50.0;
+            this.config.friction = parseFloat(config.friction) || 30.0;
             this.config.centralForce = config.centralForce || 0;
             this.config.symmetricForces = config.symmetricForces || false;
             this.config.species = config.species;
@@ -149,7 +149,7 @@ class ParticleLifeSimulator {
 
     useDefaultConfiguration() {
         console.log("Using default configuration");
-        this.config.friction = 50.0;
+        this.config.friction = 30.0;
         this.config.centralForce = 0;
         this.config.symmetricForces = false;
 
