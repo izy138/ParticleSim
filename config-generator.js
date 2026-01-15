@@ -106,48 +106,39 @@ class ConfigGenerator {
     }
 
     calculateForce(typeA, typeB, numTypes, forceScale, radius) {
-        // existing lava lamp formula
-        const seed1 = (typeA * 7 + typeB * 13 + numTypes * 3) % 1000;
-        const seed2 = (typeA * 11 + typeB * 17 + numTypes * 5) % 1000;
-        const random1 = (seed1 * 9301 + 49297) % 233280 / 233280.0;
-        const random2 = (seed2 * 4171 + 7919) % 233280 / 233280.0;
-        const random3 = (seed1 * 1231 + seed2 * 3571) % 233280 / 233280.0;
-        const random4 = (seed2 * 8191 + seed1 * 1597) % 233280 / 233280.0;
-
+        // Use true randomness like the randomize function (space bar) for maximum variety
+        // Each interaction gets completely random values, just like pressing space
+        // This ensures every custom sim is truly different
+        
         let strength, interactionRadius, collisionStrength, collisionRadius;
 
-        if (typeA === typeB) {
-            if (typeA === Math.floor(numTypes * 0.6)) {
-                strength = -(40 + random1 * 40) * forceScale;
-                interactionRadius = 3 + random2 * 8;
-            } else {
-                strength = (30 + random1 * 65) * forceScale;
-                interactionRadius = 12 + random2 * 18;
-            }
+        // Strength: same range as randomize function (-110 to +90)
+        // This gives the full range of attraction and repulsion
+        strength = (Math.random() * 200 - 110) * forceScale;
+        
+        // Radius: same range as randomize function (5-37)
+        // Using the same radiusRange as simulation-manager.js (32)
+        interactionRadius = 5 + Math.random() * 32;
+
+        // Collision strength: same range as randomize function (200-950)
+        // Using the same collisionStrengthRange (750)
+        collisionStrength = 200 + Math.random() * 750;
+
+        // Collision radius: use both absolute and ratio approaches for maximum variety
+        // 50% chance: absolute value like randomize (0.5-6.5)
+        // 50% chance: ratio of interaction radius (allows spreading/clustering)
+        if (Math.random() < 0.5) {
+            // Absolute value approach - same as randomize function
+            // Using collisionRadiusRange of 6 (from simulation-manager.js)
+            collisionRadius = 0.5 + Math.random() * 6;
         } else {
-            const asymmetricSeed = (typeA * 23 + typeB * 41) % 1000;
-            const asymmetricRandom = (asymmetricSeed * 6121 + 3571) % 233280 / 233280.0;
-
-            if (asymmetricRandom < 0.52) {
-                strength = (25 + random1 * 75) * forceScale;
-            } else {
-                strength = -(20 + random1 * 80) * forceScale;
-            }
-
-            const radiusType = random2;
-            if (radiusType < 0.15) {
-                interactionRadius = 2.5 + random3 * 5;
-            } else if (radiusType < 0.85) {
-                interactionRadius = 8 + random3 * 22;
-            } else {
-                interactionRadius = 28 + random3 * 4;
-            }
+            // Ratio approach - allows more variety in spreading/clustering behavior
+            const ratio = 0.05 + Math.random() * 0.85; // 5-90% of interaction radius
+            collisionRadius = interactionRadius * ratio;
         }
-
-        const baseCollisionStrength = Math.abs(strength) * (15 + random4 * 10);
-        collisionStrength = Math.max(200, baseCollisionStrength + random4 * 800);
-        const collisionRatio = 0.15 + random1 * 0.2;
-        collisionRadius = Math.max(0.4, interactionRadius * collisionRatio);
+        
+        // Ensure collision radius is always reasonable
+        collisionRadius = Math.max(0.3, Math.min(interactionRadius * 0.95, collisionRadius));
 
         return {
             strength: strength,
