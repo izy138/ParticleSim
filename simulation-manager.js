@@ -415,6 +415,10 @@ class SimulationManager {
             newConfig.friction = friction;
             newConfig.particleSize = particleSize;
             newConfig.particleOpacity = particleOpacity;
+            
+            // Preserve dt multiplier from current config or get from slider
+            const dtSpeedSlider = document.getElementById('dt-speed-slider');
+            newConfig.dtMultiplier = dtSpeedSlider ? parseFloat(dtSpeedSlider.value) || 1.0 : (this.simulator?.config?.dtMultiplier || 1.0);
 
             // Update simulation size to match current canvas
             if (canvasInfo) {
@@ -753,6 +757,13 @@ class SimulationManager {
         if (opacitySlider) {
             opacitySlider.value = this.simulator.config.particleOpacity;
             document.getElementById('particle-opacity-value').textContent = this.simulator.config.particleOpacity;
+        }
+
+        const dtSpeedSlider = document.getElementById('dt-speed-slider');
+        if (dtSpeedSlider) {
+            const dtMultiplier = this.simulator.config.dtMultiplier || 1.0;
+            dtSpeedSlider.value = dtMultiplier;
+            document.getElementById('dt-speed-value').textContent = dtMultiplier.toFixed(1);
         }
 
         // Sync particle count slider

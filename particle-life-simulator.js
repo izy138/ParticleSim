@@ -10,7 +10,8 @@ class ParticleLifeSimulator {
             numParticles: 10000,
             numTypes: 8,
             particleSize: 0.007,
-            particleOpacity: 0.75
+            particleOpacity: 0.75,
+            dtMultiplier: 1.0  // Speed multiplier for simulation
         }, config);
 
         this.isRunning = false;
@@ -1725,8 +1726,12 @@ class ParticleLifeSimulator {
             }
             this.lastFrameTime = now;
 
-            // Scale dt down by 50% to slow simulation
+            // Scale dt down by 50% to slow simulation (base speed)
             dt = dt * 0.4;
+            
+            // Apply user-controlled speed multiplier
+            const dtMultiplier = this.config.dtMultiplier || 1.0;
+            dt = dt * dtMultiplier;
 
             // Update uniform buffer with frame-rate independent dt
             if (!this.isPaused) {

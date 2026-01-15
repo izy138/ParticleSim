@@ -74,6 +74,7 @@ class UIController {
         // Main parameter sliders
         this.setupFrictionSlider();
         this.setupForceScaleSlider();
+        this.setupDtSpeedSlider();
         this.setupParticleAppearanceSliders();
         this.setupForceParameterSliders();
         this.setupGenerationSliders();
@@ -100,6 +101,21 @@ class UIController {
             scaleSlider.addEventListener('input', () => {
                 document.getElementById('force-scale-value').textContent = scaleSlider.value;
                 this.updateForceScale(parseFloat(scaleSlider.value));
+            });
+        }
+    }
+
+    setupDtSpeedSlider() {
+        const dtSlider = document.getElementById('dt-speed-slider');
+        if (dtSlider) {
+            if (this.simulator && this.simulator.config) {
+                dtSlider.value = this.simulator.config.dtMultiplier || 1.0;
+                document.getElementById('dt-speed-value').textContent = dtSlider.value;
+            }
+
+            dtSlider.addEventListener('input', () => {
+                document.getElementById('dt-speed-value').textContent = dtSlider.value;
+                this.updateDtSpeed(parseFloat(dtSlider.value));
             });
         }
     }
@@ -487,6 +503,14 @@ class UIController {
             document.getElementById('force-scale-value').textContent = forceScaleSlider.value;
         }
 
+        // Sync dt speed slider
+        const dtSpeedSlider = document.getElementById('dt-speed-slider');
+        if (dtSpeedSlider) {
+            const dtMultiplier = this.simulator.config.dtMultiplier || 1.0;
+            dtSpeedSlider.value = dtMultiplier;
+            document.getElementById('dt-speed-value').textContent = dtMultiplier.toFixed(1);
+        }
+
         // Sync generation sliders
         const particleTypesSlider = document.getElementById('particle-types-slider');
         if (particleTypesSlider) {
@@ -837,6 +861,14 @@ class UIController {
         );
 
         console.log('Friction updated with aspect ratio:', aspectRatio);
+    }
+
+    updateDtSpeed(value) {
+        if (!this.simulator || !this.simulator.config) return;
+        
+        // Update the dt multiplier in config
+        // This will be applied in the render loop
+        this.simulator.config.dtMultiplier = value;
     }
 
     updateForceScale(value) {

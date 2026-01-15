@@ -211,7 +211,7 @@
       1400,
       750
     ],
-    "friction": "50",
+    "friction": "30",
     "centralForce": 0,
     "symmetricForces": false
   }
