@@ -12,13 +12,97 @@ class ConfigGenerator {
 
     generateColors(numTypes) {
         const colors = [];
+        
+        // Start with a random base hue for variety between simulations
+        const baseHue = Math.random() * 360;
+        
+        // Use color harmony schemes based on number of types
+        // This creates cohesive, vibrant palettes that work well together
+        let hueScheme = [];
+        
+        if (numTypes === 2) {
+            // Complementary colors (opposites on color wheel)
+            hueScheme = [baseHue, (baseHue + 180) % 360];
+        } else if (numTypes === 3) {
+            // Triadic colors (120 degrees apart)
+            hueScheme = [baseHue, (baseHue + 120) % 360, (baseHue + 240) % 360];
+        } else if (numTypes === 4) {
+            // Tetradic colors (90 degrees apart)
+            hueScheme = [baseHue, (baseHue + 90) % 360, (baseHue + 180) % 360, (baseHue + 270) % 360];
+        } else if (numTypes === 5) {
+            // Pentadic colors (72 degrees apart) with slight variations for harmony
+            hueScheme = [
+                baseHue,
+                (baseHue + 72) % 360,
+                (baseHue + 144) % 360,
+                (baseHue + 216) % 360,
+                (baseHue + 288) % 360
+            ];
+        } else if (numTypes === 6) {
+            // Hexadic colors (60 degrees apart)
+            hueScheme = [
+                baseHue,
+                (baseHue + 60) % 360,
+                (baseHue + 120) % 360,
+                (baseHue + 180) % 360,
+                (baseHue + 240) % 360,
+                (baseHue + 300) % 360
+            ];
+        } else {
+            // For 7+ types, use evenly distributed hues with slight variations
+            for (let i = 0; i < numTypes; i++) {
+                const evenHue = (baseHue + (i * 360 / numTypes)) % 360;
+                // Add small variation (±10 degrees) for more natural look
+                const variation = (Math.random() - 0.5) * 20;
+                hueScheme.push((evenHue + variation + 360) % 360);
+            }
+        }
+        
+        // Generate colors with high saturation and varied lightness for depth
         for (let i = 0; i < numTypes; i++) {
-            const r = Math.random() * 0.7 + 0.3;
-            const g = Math.random() * 0.7 + 0.3;
-            const b = Math.random() * 0.7 + 0.3;
+            const hue = hueScheme[i];
+            
+            // Very high saturation (0.8-1.0) for vibrant, popping colors
+            // Similar to the particle-life JSON which has high saturation
+            const saturation = 0.8 + Math.random() * 0.2;
+            
+            // Varied lightness (0.35-0.75) for visual interest and contrast
+            // Create a mix of lighter and darker colors for depth
+            // Distribute lightness more strategically for better contrast
+            let lightness;
+            if (numTypes <= 4) {
+                // For fewer types, ensure good contrast
+                lightness = 0.4 + (i % 2) * 0.2 + Math.random() * 0.15;
+            } else {
+                // For more types, distribute lightness more evenly
+                lightness = 0.35 + (i / numTypes) * 0.3 + Math.random() * 0.1;
+            }
+            lightness = Math.max(0.3, Math.min(0.8, lightness)); // Clamp between 0.3 and 0.8
+            
+            // Convert HSL to RGB
+            const [r, g, b] = this.hslToRgb(hue, saturation, lightness);
             colors.push([r, g, b]);
         }
+        
+        // Shuffle colors slightly to avoid predictable patterns
+        // This adds variety while maintaining harmony
+        for (let i = colors.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [colors[i], colors[j]] = [colors[j], colors[i]];
+        }
+        
         return colors;
+    }
+
+    hslToRgb(h, s, l) {
+        // Convert HSL to RGB
+        // h: 0-360, s: 0-1, l: 0-1
+        h /= 360;
+        const a = s * Math.min(l, 1 - l);
+        const f = (n, k = (n + h * 12) % 12) => {
+            return l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+        };
+        return [f(0), f(8), f(4)];
     }
 
     calculateForce(typeA, typeB, numTypes, forceScale, radius) {
