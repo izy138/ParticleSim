@@ -5,6 +5,19 @@ let simulationManager;
 let uiController;
 let responsiveSystem;
 
+// Global test function for Step 2: Count shader (available immediately)
+window.testCountShader = async () => {
+    const sim = window.simulationManager?.simulator;
+    if (sim && typeof sim.testCountShader === 'function') {
+        return await sim.testCountShader();
+    } else {
+        console.error('Simulator not initialized yet or testCountShader not available');
+        console.log('simulationManager:', window.simulationManager);
+        console.log('simulator:', sim);
+        return false;
+    }
+};
+
 // Initialize everything when DOM is ready
 document.addEventListener('DOMContentLoaded', async () => {
     // console.log('Initializing Particle Life Simulator with Responsive Canvas...');
