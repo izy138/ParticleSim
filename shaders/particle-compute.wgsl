@@ -134,7 +134,6 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
 
     }
 
-
     // Corner escape force - prevents particles from getting stuck in corners
     // Only activate when particle is very close to BOTH walls (actual corner region)
     let corner_threshold = 0.025; // Distance from walls to consider "in corner"
@@ -232,6 +231,42 @@ fn main(@builtin(global_invocation_id) global_id: vec3<u32>) {
     newVel *= params.friction;
 
     var newPos = pos + newVel * params.dt;
+    
+    // Soft bounce from edges - applies velocity damping as particles approach walls
+    // This creates a gentle bounce effect that prevents clustering at edges
+    let edgeBounceThreshold = 0.05; // Distance from edge where bounce damping starts
+    let bounceStrength = 0.3; // Strength of the bounce damping (lower = softer)
+    
+    // Calculate distance to each edge
+    let distToEdgeX = 1.0 - abs(pos.x);
+    let distToEdgeY = 1.0 - abs(pos.y);
+    
+    // Apply bounce damping to velocity perpendicular to walls
+    // As particles approach edges, slow down their velocity toward the wall
+    if (distToEdgeX < edgeBounceThreshold && newVel.x != 0.0) {
+        // Calculate how close we are to the edge (0.0 = at edge, 1.0 = at threshold)
+        let edgeFactor = distToEdgeX / edgeBounceThreshold;
+        // Apply damping to velocity component toward the wall
+        // If pos.x > 0 and newVel.x > 0, particle moving toward right wall - damp it
+        // If pos.x < 0 and newVel.x < 0, particle moving toward left wall - damp it
+        if ((pos.x > 0.0 && newVel.x > 0.0) || (pos.x < 0.0 && newVel.x < 0.0)) {
+            // Damping factor: stronger when closer to edge
+            let dampingFactor = 1.0 - bounceStrength * (1.0 - edgeFactor);
+            newVel.x = newVel.x * dampingFactor;
+        }
+    }
+    
+    if (distToEdgeY < edgeBounceThreshold && newVel.y != 0.0) {
+        let edgeFactor = distToEdgeY / edgeBounceThreshold;
+        // Apply damping to velocity component toward the wall
+        if ((pos.y > 0.0 && newVel.y > 0.0) || (pos.y < 0.0 && newVel.y < 0.0)) {
+            let dampingFactor = 1.0 - bounceStrength * (1.0 - edgeFactor);
+            newVel.y = newVel.y * dampingFactor;
+        }
+    }
+    
+    // Update position with damped velocity
+    newPos = pos + newVel * params.dt;
     
 //Apply aspect ratio correction to wall bounds with margin to prevent clipping
     let boundX = 0.997;  // Reduced from 1.0 to prevent edge clipping
