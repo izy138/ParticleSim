@@ -459,18 +459,18 @@ class UIController {
 
         display.innerHTML = `
             <strong>Current Configuration:</strong><br>
-            • Particle Types: ${config.species.length} (max: ${particleTypes})<br>
-            • Total Particles: ${config.particleCount.toLocaleString()} (max: ${totalParticles})<br>
-            • Canvas Size: ${canvasInfo}<br>
-            • Aspect Ratio: ${aspectRatio}:1<br>
-            • Particle Size: ${config.particleSize}<br>
-            • Antisocial Types: ${antisocialCount}<br>
-            • Force Balance: ${attractiveForces} attractive, ${repulsiveForces} repulsive<br>
-            • Friction: ${config.friction}<br>
-            • Force Scale: ${forceScale}<br>
-            • Central Force: ${centralForce}<br>
-            • Looping Borders: ${loopingBorders === '1' ? 'Yes' : 'No'}<br>
-            • Last Updated: ${new Date().toLocaleTimeString()}
+            • Particle Types: ${escapeHtml(config.species.length)} (max: ${escapeHtml(particleTypes)})<br>
+            • Total Particles: ${escapeHtml(config.particleCount.toLocaleString())} (max: ${escapeHtml(totalParticles)})<br>
+            • Canvas Size: ${escapeHtml(canvasInfo)}<br>
+            • Aspect Ratio: ${escapeHtml(aspectRatio)}:1<br>
+            • Particle Size: ${escapeHtml(config.particleSize)}<br>
+            • Antisocial Types: ${escapeHtml(antisocialCount)}<br>
+            • Force Balance: ${escapeHtml(attractiveForces)} attractive, ${escapeHtml(repulsiveForces)} repulsive<br>
+            • Friction: ${escapeHtml(config.friction)}<br>
+            • Force Scale: ${escapeHtml(forceScale)}<br>
+            • Central Force: ${escapeHtml(centralForce)}<br>
+            • Looping Borders: ${escapeHtml(loopingBorders === '1' ? 'Yes' : 'No')}<br>
+            • Last Updated: ${escapeHtml(new Date().toLocaleTimeString())}
         `;
     }
 
@@ -822,7 +822,7 @@ class UIController {
             const display = document.getElementById('config-display');
             if (display) {
                 const originalText = display.innerHTML;
-                display.innerHTML = `<strong style="color: red;">✗ Load failed: ${error.message}</strong>`;
+                display.innerHTML = `<strong style="color: red;">✗ Load failed: ${escapeHtml(error.message)}</strong>`;
                 setTimeout(() => {
                     display.innerHTML = originalText;
                 }, 5000);
@@ -999,7 +999,7 @@ class UIController {
                         const display = document.getElementById('config-display');
                         if (display) {
                             const originalText = display.innerHTML;
-                            display.innerHTML = `<strong style="color: blue;">📁 Loading ${file.name}...</strong>`;
+                            display.innerHTML = `<strong style="color: blue;">📁 Loading ${escapeHtml(file.name)}...</strong>`;
 
                             // Load the configuration
                             const config = await ConfigUtils.loadConfigurationFromFile(file);
@@ -1009,13 +1009,13 @@ class UIController {
                             const newTypes = config.species.length;
 
                             if (currentTypes !== newTypes) {
-                                display.innerHTML = `<strong style="color: blue;">🔄 Restarting simulator for ${newTypes} particle types...</strong>`;
+                                display.innerHTML = `<strong style="color: blue;">🔄 Restarting simulator for ${escapeHtml(newTypes)} particle types...</strong>`;
                             }
 
                             await this.simulationManager.loadConfiguration(config);
 
                             // Show success feedback
-                            display.innerHTML = `<strong style="color: green;">✓ Loaded ${file.name} successfully!</strong>`;
+                            display.innerHTML = `<strong style="color: green;">✓ Loaded ${escapeHtml(file.name)} successfully!</strong>`;
                             setTimeout(() => {
                                 display.innerHTML = originalText;
                             }, 3000);
@@ -1027,7 +1027,7 @@ class UIController {
                         const display = document.getElementById('config-display');
                         if (display) {
                             const originalText = display.innerHTML;
-                            display.innerHTML = `<strong style="color: red;">✗ Failed to load ${file.name}: ${error.message}</strong>`;
+                            display.innerHTML = `<strong style="color: red;">✗ Failed to load ${escapeHtml(file.name)}: ${escapeHtml(error.message)}</strong>`;
                             setTimeout(() => {
                                 display.innerHTML = originalText;
                             }, 5000);

@@ -49,7 +49,7 @@ class ConfigUtils {
         const display = document.getElementById('config-display');
         if (display) {
             const originalText = display.innerHTML;
-            display.innerHTML = `<strong style="color: green;">✓ Configuration saved as ${filename}</strong>`;
+            display.innerHTML = `<strong style="color: green;">✓ Configuration saved as ${escapeHtml(filename)}</strong>`;
             setTimeout(() => {
                 display.innerHTML = originalText;
             }, 3000);

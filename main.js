@@ -145,7 +145,7 @@ function showError(message) {
             <div style="display: flex; align-items: center; justify-content: center; height: 400px; color: #ff6b6b; text-align: center; font-size: 16px;">
                 <div>
                     <div style="font-size: 48px; margin-bottom: 20px;">❌</div>
-                    <div><strong>Error:</strong> ${message}</div>
+                    <div><strong>Error:</strong> ${escapeHtml(message)}</div>
                     <div style="margin-top: 10px; font-size: 14px; opacity: 0.8;">
                         Please check browser compatibility and reload the page.
                     </div>

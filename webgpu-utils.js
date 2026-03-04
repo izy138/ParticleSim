@@ -146,7 +146,7 @@ class WebGPUUtils {
       container.className = 'webgpu-error';
       container.style.cssText = 'position:fixed; top:0; left:0; right:0; padding:20px; background:#f44336; color:white; text-align:center; font-family:sans-serif; z-index:1000;';
       container.innerHTML = `
-          <strong>WebGPU Error:</strong> ${message}
+          <strong>WebGPU Error:</strong> ${escapeHtml(message)}
           <button style="margin-left:20px; padding:5px 10px; background:rgba(255,255,255,0.2); border:none; color:white; cursor:pointer;" onclick="this.parentElement.remove()">
               Close
           </button>

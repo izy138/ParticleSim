@@ -590,7 +590,7 @@ class SimulationManager {
                 const display = document.getElementById('config-display');
                 if (display) {
                     const originalText = display.innerHTML;
-                    display.innerHTML = `<strong style="color: blue;">🔄 Restarting simulator for ${newTypes} particle types...</strong>`;
+                    display.innerHTML = `<strong style="color: blue;">🔄 Restarting simulator for ${escapeHtml(newTypes)} particle types...</strong>`;
 
                     // Create a new simulator with the loaded configuration
                     this.simulator = new ParticleLifeSimulator('webgpu-canvas', config);
@@ -812,16 +812,16 @@ class SimulationManager {
 
         display.innerHTML = `
             <strong>Current Configuration:</strong><br>
-            • Particle Types: ${config.species.length}<br>
-            • Total Particles: ${config.particleCount.toLocaleString()}<br>
-            • Canvas Size: ${canvasSize}<br>
-            • Aspect Ratio: ${aspectRatio}:1<br>
-            • Device: ${deviceCategory}<br>
-            • Particle Size: ${config.particleSize || 'Default'}<br>
-            • Antisocial Types: ${antisocialCount}<br>
-            • Force Balance: ${attractiveForces} attractive, ${repulsiveForces} repulsive<br>
-            • Friction: ${config.friction}<br>
-            • Last Updated: ${new Date().toLocaleTimeString()}
+            • Particle Types: ${escapeHtml(config.species.length)}<br>
+            • Total Particles: ${escapeHtml(config.particleCount.toLocaleString())}<br>
+            • Canvas Size: ${escapeHtml(canvasSize)}<br>
+            • Aspect Ratio: ${escapeHtml(aspectRatio)}:1<br>
+            • Device: ${escapeHtml(deviceCategory)}<br>
+            • Particle Size: ${escapeHtml(config.particleSize || 'Default')}<br>
+            • Antisocial Types: ${escapeHtml(antisocialCount)}<br>
+            • Force Balance: ${escapeHtml(attractiveForces)} attractive, ${escapeHtml(repulsiveForces)} repulsive<br>
+            • Friction: ${escapeHtml(config.friction)}<br>
+            • Last Updated: ${escapeHtml(new Date().toLocaleTimeString())}
         `;
     }
 }
